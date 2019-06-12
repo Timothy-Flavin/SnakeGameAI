@@ -8,6 +8,7 @@
 #define testMatrixMult 
 #define testMatrixCreate
 #define testDenseNetForMultiplication
+#define testcsvreader
 struct csv {
 public:
 	std::string* data = NULL;
@@ -17,6 +18,8 @@ public:
 };
 csv readCSV(const char* fileName);
 double** csvToDouble(csv* file);
+void init(DenseNet* net, int* numIterations, double* stepSize, csv*);
+void train(DenseNet* net, int* numIterations, double* stepSize, csv* file);
 
 int main() {
 #ifndef testMatrixMult
@@ -128,6 +131,7 @@ int main() {
 	m->print();
 	//test.print();
 #endif
+#ifndef testcsvreader
 	csv* newcsv = NULL;
 	newcsv = &readCSV("C:\\Users\\tcfla\\Desktop\\testcsv.csv");
 	double** dat = csvToDouble(newcsv);
@@ -138,6 +142,15 @@ int main() {
 		}
 		std::cout << std::endl;
 	}
+#endif
+	DenseNet * userNet = NULL;
+	int* numIterations=new int;
+	double* stepSize=new double;
+	csv* newcsv = NULL;
+	init(userNet, numIterations, stepSize, newcsv);
+	train(userNet, numIterations, stepSize, newcsv);
+	std::cin.clear();
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cin.get();
 	return 0;
 }
@@ -198,4 +211,44 @@ double** csvToDouble(csv* file) {
 	return dat;
 }
 
-//change made
+void init(DenseNet* net, int* numIterations, double* stepSize) {
+	srand(time(NULL));
+	int netType = 0, numLayers = 0;
+	int*layerSizes=NULL;
+	bool sigmoidOutput = true;
+	std::string path = "";
+	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: TBD\n";
+	std::cin >> netType;
+	std::cout << "\nHow many layers do you want?\n";
+	std::cin >> numLayers;
+	layerSizes = new int[numLayers];
+	std::cout << "number of nodes in layer 0 and last layer must \nadd up to number of values in csv file\n";
+	for (int i = 0; i < numLayers; i++) {
+		std::cout << "how many nodes in layer " << i << std::endl;
+		std::cin >> layerSizes[i];
+	}
+	std::cout << "\nChoose output mode: 1: sigmoid, 0: raw\n";
+	std::cin >> sigmoidOutput;
+	std::cout << "\nChoose number of iterations to train: ";
+	std::cin >> *numIterations;
+	std::cout << "\nChoose step size: ";
+	std::cin >> *stepSize;
+	net = new DenseNet(numLayers, layerSizes, sigmoidOutput);
+}
+
+void train(DenseNet* net, int* numIterations, double* stepSize, csv* file) {
+	int percentNum = 1;
+	if (*numIterations >= 100) {
+		percentNum = *numIterations / 100;
+	}
+	int rowNum = 0;
+	int numIn = net->getNumInputs();
+	int numOut = net->getNumOutputs();
+	for (int i = 0; i < *numIterations; i++) {
+		rowNum = rand() % file->numLines;
+
+		if (i%percentNum == 0) {
+			std::cout << "percent done: " << i / percentNum<<"%\n";
+		}
+	}
+}

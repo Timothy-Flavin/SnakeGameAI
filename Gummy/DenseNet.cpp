@@ -52,7 +52,7 @@ Matrix* DenseNet::feedForward(Matrix* inputs) {
 	return &activations[numLayers-1];
 }
 // make a back prop that does stocastic gradient descent with samples of data rather than 1 as an option
-void DenseNet::backProp(Matrix* A) {
+void DenseNet::backProp(Matrix* A, double stepSize) {
 	//error*S()*(1-S())
 	/*
 	1: set last row of eActivations through calcError
@@ -92,7 +92,7 @@ void DenseNet::backProp(Matrix* A) {
 			}
 		}
 	}
-	double stepSize = 0.0005;
+	//double stepSize = 0.0005;
 	for (int l = 0; l < numLayers - 1; l++) {
 		for (int i = 0; i < weights[l].getM(); i++) {
 			for (int j = 0; j < weights[l].getN(); j++) {

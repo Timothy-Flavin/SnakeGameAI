@@ -20,7 +20,9 @@ public:
 	DenseNet(int nl, int*ll, bool so);
 	Matrix* feedForward(Matrix* inputs);
 	double calcError(Matrix* A);
-	void backProp(Matrix* feedback);
+	void backProp(Matrix* feedback, double stepSize);
 	void print();
 	void printGradient();
+	int getNumInputs() { return layerList[0]; }
+	int getNumOutputs() { return layerList[numLayers - 1]; }
 };
