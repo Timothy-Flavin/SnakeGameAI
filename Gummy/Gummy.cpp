@@ -16,10 +16,10 @@ public:
 	int numVals = 0;
 	double**numData = NULL;
 };
-csv readCSV(const char* fileName);
-double** csvToDouble(csv* file);
-void init(DenseNet* net, int* numIterations, double* stepSize, csv*);
-void train(DenseNet* net, int* numIterations, double* stepSize, csv* file);
+csv* readCSV(const char* fileName);
+void csvToDouble(csv* file);
+DenseNet* init(DenseNet* net, int* numIterations, double* stepSize, csv* file);
+void train(DenseNet* net, int numIterations, double* stepSize, csv* file);
 
 int main() {
 #ifndef testMatrixMult
@@ -100,7 +100,7 @@ int main() {
 		//test.printGradient();
 		//for(int i = 0; i < 3; i++)
 			//test.backProp(&errorm);
-		test.backProp(errorm);
+		test.backProp(errorm, 0.005);
 		//test.printGradient();
 		if (numTimes > 100 && i % (numTimes/100) == 0) {
 			std::cout << "\npercent done: " << i * 100.0 / numTimes<<"%";
@@ -144,10 +144,11 @@ int main() {
 	}
 #endif
 	DenseNet * userNet = NULL;
-	int* numIterations=new int;
+	int numIterations = 0;
 	double* stepSize=new double;
-	csv* newcsv = NULL;
-	init(userNet, numIterations, stepSize, newcsv);
+	csv* newcsv = new csv;
+	userNet = init(userNet, &numIterations, stepSize, newcsv);
+	userNet->print();
 	train(userNet, numIterations, stepSize, newcsv);
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -155,66 +156,81 @@ int main() {
 	return 0;
 }
 
-csv readCSV(const char* fileName) {
+csv* readCSV(char* fileName) {
 	std::ifstream infile;
+	std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
+	std::cout<<"opened file"<<std::endl;
 	int curLine = 0;
 	std::string dead = "";
-	while (std::getline(infile, dead)) {
+	while (std::getline(infile,dead)) {
 		curLine++;
+		std::cout<<"why not working"<<std::endl;
+		//infile>>dead;
+		std::cout<<infile.good()<<", got line "<<curLine<<", "<<dead<<std::endl;
+		/*if(infile.good()==0){
+			std::cout<<"done"<<std::endl;
+			break;
+		}*/
 	}
-	std::cout << "line num: " << curLine;
+	std::cout << "line num: "<<curLine<<std::endl; //<< curLine;
 	infile.clear();
+	std::cout<<"cleared"<<std::endl;
 	infile.seekg(0, std::ios::beg);
-	csv file;
-	file.numLines = curLine;
-	file.data = new std::string[curLine];
+	std::cout<<"seeked 0"<<std::endl;
+	csv* file = new csv;
+	file->numLines = curLine;
+	std::cout<<"made num lines"<<std::endl;
+	file->data = new std::string[curLine];
 	curLine = 0;
-	while (std::getline(infile, file.data[curLine])) {
-		std::cout << file.data[curLine] << std::endl;
+	std::cout<<"made empty file"<<std::endl;
+	while (std::getline(infile, file->data[curLine])) {
+		std::cout << file->data[curLine] << std::endl;
 		curLine++;
 	}
+	std::cout<<"filled file"<<std::endl;
 	int numVals = 1;
-	for (int i = 0; i < file.data[0].size(); i++) {
-		if (file.data[0].at(i) == ',') {
+	for (int i = 0; i < file->data[0].size(); i++) {
+		if (file->data[0].at(i) == ',') {
 			numVals++;
 		}
 	}
-	std::cout << "\nnumVals: " << numVals;
-	file.numVals = numVals;
+	std::cout<<"got num vals"<<std::endl;
+	std::cout << "\nnumVals: " << numVals<<std::endl;
+	file->numVals = numVals;
 	return file;
 }
 
-double** csvToDouble(csv* file) {
-	double** dat = new double*[file->numLines];
+void csvToDouble(csv* file) {
+	file->numData = new double*[file->numLines];
 	for (int i = 0; i < file->numLines; i++) {
 		//std::cout << "starting thing\n";
-		dat[i] = new double[file->numVals];
+		file->numData[i] = new double[file->numVals];
 		//std::cout << "after error thing\n";
 		int commaPos = 0;
 		int vals = 0;
 		for (int j = 0; j < file->data[i].size(); j++) {
 			if (file->data[i].at(j) == ',') {
 				//std::cout << "\nfirst if";
-				dat[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
+				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
 				commaPos = j+1;
 				vals++;
 			}
 			else if (j == file->data[i].size() - 1) {
 				//std::cout << "\nsecond if";
-				dat[i][vals] = std::stod(file->data[i].substr(commaPos));
+				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos));
 				commaPos = j;
 				vals++;
 			}
 		}
 	}
-	return dat;
 }
 
-void init(DenseNet* net, int* numIterations, double* stepSize) {
+DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file) {
 	srand(time(NULL));
 	int netType = 0, numLayers = 0;
 	int*layerSizes=NULL;
+	char*fileName = new char[20];
 	bool sigmoidOutput = true;
 	std::string path = "";
 	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: TBD\n";
@@ -233,20 +249,52 @@ void init(DenseNet* net, int* numIterations, double* stepSize) {
 	std::cin >> *numIterations;
 	std::cout << "\nChoose step size: ";
 	std::cin >> *stepSize;
-	net = new DenseNet(numLayers, layerSizes, sigmoidOutput);
+	std::cout<< "\nput file into gummy.cpp folder and enter file name: ";
+	std::cin.clear();
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	std::cin.getline(fileName, 20);
+	std::cout<<"FINISHED GATHERING DATA\n"<<fileName<<std::endl;
+	DenseNet* net = new DenseNet(numLayers, layerSizes, sigmoidOutput);
+	//net->print();
+	std::cout<<"reading file"<<std::endl;
+	csv* temp = readCSV(fileName);
+	file->data=temp->data;
+	file->numLines=temp->numLines;
+	file->numVals=temp->numVals;
+	csvToDouble(file);
+	std::cout<<"FINISHED MAKING DENSE NET\n";
+	return net;
 }
 
-void train(DenseNet* net, int* numIterations, double* stepSize, csv* file) {
+void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
+	std::cout<<"training net"<<std::endl;
 	int percentNum = 1;
-	if (*numIterations >= 100) {
-		percentNum = *numIterations / 100;
+	if (numIterations >= 100) {
+		percentNum = numIterations / 100;
 	}
+	std::cout<<"assigned percent "<<numIterations<<std::endl;
+	net->print();
 	int rowNum = 0;
 	int numIn = net->getNumInputs();
 	int numOut = net->getNumOutputs();
-	for (int i = 0; i < *numIterations; i++) {
+	std::cout<<"got in and outputs"<<std::endl;
+	Matrix* inputMatrix = new Matrix(numIn,1);
+	Matrix* outputMatrix = new Matrix(numOut,1);
+	std::cout<<"made training matrices"<<std::endl;
+	for (int i = 0; i < numIterations; i++) {
 		rowNum = rand() % file->numLines;
-
+		std::cout<<"picked a row"<<std::endl;
+		for(int j = 0; j < numIn; j++){
+			inputMatrix->set(j,0,file->numData[rowNum][j]);
+		}
+		for(int j = 0; j < numOut; j++){
+			outputMatrix->set(j,0,file->numData[rowNum][j+numIn]);
+		}
+		std::cout<<"set input and outputs"<<std::endl;
+		net->feedForward(inputMatrix);
+		std::cout<<"fed forward"<<std::endl;
+		net->backProp(outputMatrix, *stepSize);
+		std::cout<<"back propped"<<std::endl;
 		if (i%percentNum == 0) {
 			std::cout << "percent done: " << i / percentNum<<"%\n";
 		}
