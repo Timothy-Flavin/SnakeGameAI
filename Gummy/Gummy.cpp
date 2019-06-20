@@ -47,7 +47,7 @@ int main() {
 	csvToDouble(loadnet);
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::cout<<"done"<<std::endl;
+	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
 	std::cin.get();
 	return 0;
 }
