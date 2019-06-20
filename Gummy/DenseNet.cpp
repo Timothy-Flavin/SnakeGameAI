@@ -29,7 +29,44 @@ DenseNet::DenseNet(int nl, int*ll, bool so, char* nm) {
 	}
 }
 DenseNet::DenseNet(csv* file){
+	std::cout<<"making new net from file";
+	name = file->name;
+	numLayers = file->numData[0][0];
+	sigmoidOutput = file->numData[0][1] == 1?true:false;
+	layerList = new int[numLayers];
+	for(int i = 0; i < numLayers; i++){
+		layerList[i]=file->numData[0][i+2];
+	}
+	activations = new Matrix[numLayers];
+	weights = new Matrix[numLayers - 1];
+	bias = new Matrix[numLayers - 1];
+	eWeights = new Matrix[numLayers - 1];
+	eBias = new Matrix[numLayers - 1];
+	eActivation = new Matrix[numLayers];
 
+	int currentRow = 1;
+	for (int i = 0; i < numLayers-1; i++) {
+		weights[i].construct(layerList[i+1], layerList[i]);
+		for(int r = 0; r < weights[i].getM(); r++){
+			for(int c = 0; c < weights[i].getN();c++){
+				weights[i].set(r,c,file->numData[currentRow][c]);
+			}
+			currentRow++;
+		}
+		eWeights[i].construct(layerList[i + 1], layerList[i]);
+	}
+	for (int i = 0; i < numLayers-1; i++) {
+		bias[i].construct(layerList[i+1], 1);
+		for(int r = 0; r < bias[i].getM(); r++){
+			weights[i].set(r,0,file->numData[currentRow][r]);
+		}
+		currentRow++;
+		eBias[i].construct(layerList[i + 1], 1);
+	}
+	for (int i = 0; i < numLayers; i++) {
+		activations[i].construct(layerList[i], 1);
+		eActivation[i].construct(layerList[i], 1);
+	}
 }
 Matrix* DenseNet::feedForward(Matrix* inputs) {
 	int numIns = inputs->getM();
@@ -183,8 +220,19 @@ void DenseNet::save(){
 				outfile<<std::endl;
 			}
 		}
+		for(int i = 0; i < numLayers-1; i++){
+			for(int j = 0; j < bias[i].getM(); j++){
+				if(j>0) outfile<<',';
+				outfile<<bias[i].get(j,0);
+			}
+			if(i < numLayers-2) outfile<<std::endl;
+		}
 		
 	} else{
 		std::cout<<"ERROR could not open/create file"<<std::endl;
 	}
+}
+
+void DenseNet::setName(char* nm){
+	name = nm;
 }

@@ -7,11 +7,12 @@
 #include"DenseNet.h"
 #include"CSV.h"
 
-csv* readCSV(const char* fileName);
+csv* readCSV(char* fileName);
 void csvToDouble(csv* file);
 DenseNet* init(DenseNet* net, int* numIterations, double* stepSize, csv* file, char* name);
 void train(DenseNet* net, int numIterations, double* stepSize, csv* file);
 void saveNet(DenseNet* net);
+DenseNet* loadNet(char* fileName);
 
 int main() {
 	DenseNet * userNet = NULL;
@@ -37,6 +38,9 @@ int main() {
 		}
 	}
 	saveNet(userNet);
+	DenseNet* copy = loadNet(userNet->getName());
+	copy->setName("copy.csv");
+	saveNet(copy);
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
@@ -44,7 +48,7 @@ int main() {
 	return 0;
 }
 
-csv* readCSV(const char* fileName) {
+csv* readCSV(char* fileName) {
 	std::ifstream infile;
 	std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
@@ -67,6 +71,7 @@ csv* readCSV(const char* fileName) {
 	infile.seekg(0, std::ios::beg);
 	std::cout<<"seeked 0"<<std::endl;
 	csv* file = new csv;
+	file->name = fileName;
 	file->numLines = curLine;
 	std::cout<<"made num lines"<<std::endl;
 	file->data = new std::string[curLine];
@@ -247,4 +252,5 @@ void saveNet(DenseNet* net){
 DenseNet* loadNet(char* fileName){
 	csv* loadnet = readCSV(fileName);
 	csvToDouble(loadnet);
+	DenseNet* net = new DenseNet(loadnet);
 }

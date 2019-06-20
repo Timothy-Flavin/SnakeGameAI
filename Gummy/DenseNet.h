@@ -30,6 +30,7 @@ public:
 	void printGradient();
 	int getNumInputs() { return layerList[0]; }
 	char* getName() { return name; }
+	void setName(char* nm);
 	int getNumOutputs() { return layerList[numLayers - 1]; }
 	void save();
 };
