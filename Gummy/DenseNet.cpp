@@ -1,11 +1,12 @@
 #include"DenseNet.h"
 //Creates a dense neural net with a number of layers "nl" and a pointer to an array or layer sizes "ll"
-DenseNet::DenseNet(int nl, int*ll, bool so) {
+DenseNet::DenseNet(int nl, int*ll, bool so, char* nm) {
 	sigmoidOutput = so;
 	if (nl < 2)
 		std::cout << "Need at least an input layer and output layer";
 	numLayers = nl;
 	layerList = ll;
+	name = nm;
 	activations = new Matrix[numLayers];
 	weights = new Matrix[numLayers - 1];
 	bias = new Matrix[numLayers - 1];
@@ -161,10 +162,10 @@ void DenseNet::printGradient() {
 	std::cout << "\n\n -------------END PRINT GRADIENT-------------\n\n";
 }
 
-void DenseNet::save(char* fileName){
+void DenseNet::save(){
 	std::cout<<"saving net"<<std::endl;
 	std::ofstream outfile;
-	outfile.open(fileName);
+	outfile.open(name);
 	
 	if(outfile.is_open()){
 		outfile<<numLayers<<','<<sigmoidOutput<<',';

@@ -5,26 +5,21 @@
 #include<cmath>
 #include"Matrix.h"
 #include"DenseNet.h"
+#include"CSV.h"
 
-struct csv {
-public:
-	std::string* data = NULL;
-	int numLines = 0;
-	int numVals = 0;
-	double**numData = NULL;
-};
 csv* readCSV(const char* fileName);
 void csvToDouble(csv* file);
-DenseNet* init(DenseNet* net, int* numIterations, double* stepSize, csv* file);
+DenseNet* init(DenseNet* net, int* numIterations, double* stepSize, csv* file, char* name);
 void train(DenseNet* net, int numIterations, double* stepSize, csv* file);
-void saveNet(DenseNet* net, char* fileName);
+void saveNet(DenseNet* net);
 
 int main() {
 	DenseNet * userNet = NULL;
 	int numIterations = 0;
 	double* stepSize=new double;
 	csv* newcsv = new csv;
-	userNet = init(userNet, &numIterations, stepSize, newcsv);
+	char* name;
+	userNet = init(userNet, &numIterations, stepSize, newcsv, name);
 	userNet->print();
 	bool stillGoing = true;
 	while(stillGoing){
@@ -41,10 +36,7 @@ int main() {
 			std::cin>>*stepSize;
 		}
 	}
-	char* exampleNet = "exampleNet.csv";
-	saveNet(userNet, exampleNet);
-	csv* loadnet = readCSV(exampleNet);
-	csvToDouble(loadnet);
+	saveNet(userNet);
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
@@ -132,12 +124,17 @@ void csvToDouble(csv* file) {
 	}
 }
 
-DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file) {
+DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file, char* name) {
 	srand(time(NULL));
 	int netType = 0, numLayers = 0;
 	int*layerSizes=NULL;
 	char*fileName = new char[20];
 	bool sigmoidOutput = true;
+	std::cout<< "\nEnter the file name to save your net: ";
+	std::cin.clear();
+	//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	std::cin.getline(name, 20);
+	std::cout<<"\nname: "<<name;
 	std::string path = "";
 	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: TBD\n";
 	std::cin >> netType;
@@ -160,7 +157,7 @@ DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file) 
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cin.getline(fileName, 20);
 	std::cout<<"FINISHED GATHERING DATA\n"<<fileName<<std::endl;
-	DenseNet* net = new DenseNet(numLayers, layerSizes, sigmoidOutput);
+	DenseNet* net = new DenseNet(numLayers, layerSizes, sigmoidOutput, name);
 	//net->print();
 	std::cout<<"reading file"<<std::endl;
 	csv* temp = readCSV(fileName);
@@ -243,10 +240,11 @@ void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
 	
 }
 
-void saveNet(DenseNet* net, char* fileName){
-	net->save(fileName);
+void saveNet(DenseNet* net){
+	net->save();
 }
 
 DenseNet* loadNet(char* fileName){
-
+	csv* loadnet = readCSV(fileName);
+	csvToDouble(loadnet);
 }
