@@ -1,6 +1,4 @@
 #include"DenseNet.h"
-#include<cmath>
-
 //Creates a dense neural net with a number of layers "nl" and a pointer to an array or layer sizes "ll"
 DenseNet::DenseNet(int nl, int*ll, bool so) {
 	sigmoidOutput = so;
@@ -28,6 +26,9 @@ DenseNet::DenseNet(int nl, int*ll, bool so) {
 		activations[i].construct(layerList[i], 1);
 		eActivation[i].construct(layerList[i], 1);
 	}
+}
+DenseNet::DenseNet(csv* file){
+
 }
 Matrix* DenseNet::feedForward(Matrix* inputs) {
 	int numIns = inputs->getM();
@@ -158,4 +159,31 @@ void DenseNet::printGradient() {
 
 	}
 	std::cout << "\n\n -------------END PRINT GRADIENT-------------\n\n";
+}
+
+void DenseNet::save(char* fileName){
+	std::cout<<"saving net"<<std::endl;
+	std::ofstream outfile;
+	outfile.open(fileName);
+	
+	if(outfile.is_open()){
+		outfile<<numLayers<<','<<sigmoidOutput<<',';
+		for(int i = 0; i < numLayers; i++){
+			if(i>0)outfile<<',';
+			outfile<<layerList[i];
+		}
+		outfile<<std::endl;
+		for(int i = 0; i < numLayers-1; i++){
+			for(int j = 0; j < weights[i].getM(); j++){
+				for(int k = 0; k < weights[i].getN();k++){
+					if(k>0) outfile<<',';
+					outfile<<weights[i].get(j,k);
+				}
+				outfile<<std::endl;
+			}
+		}
+		
+	} else{
+		std::cout<<"ERROR could not open/create file"<<std::endl;
+	}
 }
