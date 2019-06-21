@@ -1,54 +1,20 @@
-#include<iostream>
-#include<fstream>
-#include<string>
-#include<ctime>
-#include<cmath>
-#include"Matrix.h"
-#include"DenseNet.h"
-#include"CSV.h"
+#include"Gummy.h"
 
-csv* readCSV(char* fileName);
-void csvToDouble(csv* file);
-DenseNet* init(DenseNet* net, int* numIterations, double* stepSize, csv* file, char* name);
-void train(DenseNet* net, int numIterations, double* stepSize, csv* file);
-void saveNet(DenseNet* net);
-DenseNet* loadNet(char* fileName);
-
-int main() {
-	DenseNet * userNet = NULL;
-	int numIterations = 0;
-	double* stepSize=new double;
-	csv* newcsv = new csv;
-	char* name;
-	userNet = init(userNet, &numIterations, stepSize, newcsv, name);
-	userNet->print();
-	bool stillGoing = true;
-	while(stillGoing){
-		stillGoing=false;
-		train(userNet, numIterations, stepSize, newcsv);
-		std::cout<<"would you like to train more? y/n"<<std::endl;
-		char ans = 'a';
-		std::cin>>ans;
-		if(ans == 'y'){
-			stillGoing = true;
-			std::cout<<"How many iterations? ";
-			std::cin>>numIterations;
-			std::cout<<"step size: ";
-			std::cin>>*stepSize;
-		}
-	}
-	saveNet(userNet);
-	DenseNet* copy = loadNet(userNet->getName());
-	copy->setName("copy.csv");
-	saveNet(copy);
+Gummy::Gummy(){
+	std::cout<<"constructing Gummy"<<std::endl;
+	srand(time(NULL));
+	//csvFileName = new char[20];
+	std::cout << "\nChoose number of iterations to train: ";
+	std::cin >> numIterations;
+	std::cout << "\nChoose step size: ";
+	std::cin >> stepSize;
+	std::cout<< "\nput file into gummy.cpp folder and enter file name: ";
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
-	std::cin.get();
-	return 0;
+	std::cin.getline(csvFileName, 20);
 }
 
-csv* readCSV(char* fileName) {
+csv* Gummy::readCSV(char* fileName) {
 	std::ifstream infile;
 	std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
@@ -93,8 +59,12 @@ csv* readCSV(char* fileName) {
 	file->numVals = numVals;
 	return file;
 }
-
-void csvToDouble(csv* file) {
+void Gummy::updateTrainingData(bool numbersOnly) {
+	trainingData = readCSV(csvFileName);
+	if(numbersOnly)
+		csvToDouble(trainingData);
+}
+void Gummy::csvToDouble(csv* file) {
 	std::cout << "------------------------CSV TO DOUBLE---------------\n";
 	file->numData = new double*[file->numLines];
 	for (int i = 0; i < file->numLines; i++) {
@@ -129,20 +99,16 @@ void csvToDouble(csv* file) {
 	}
 }
 
-DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file, char* name) {
-	srand(time(NULL));
-	int netType = 0, numLayers = 0;
-	int*layerSizes=NULL;
-	char*fileName = new char[20];
-	bool sigmoidOutput = true;
+DenseNet* Gummy::userInit() {
 	std::cout<< "\nEnter the file name to save your net: ";
 	std::cin.clear();
 	//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::cin.getline(name, 20);
-	std::cout<<"\nname: "<<name;
-	std::string path = "";
-	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: TBD\n";
-	std::cin >> netType;
+	std::cin.getline(netFileName, 20);
+	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: convolutional\n";
+	std::cin >> type;
+	int numLayers = 0;
+	int*layerSizes=NULL;
+	bool sigmoidOutput = true;
 	std::cout << "\nHow many layers do you want?\n";
 	std::cin >> numLayers;
 	layerSizes = new int[numLayers];
@@ -153,28 +119,17 @@ DenseNet* init(DenseNet* nete, int* numIterations, double* stepSize, csv* file, 
 	}
 	std::cout << "\nChoose output mode: 1: sigmoid, 0: raw\n";
 	std::cin >> sigmoidOutput;
-	std::cout << "\nChoose number of iterations to train: ";
-	std::cin >> *numIterations;
-	std::cout << "\nChoose step size: ";
-	std::cin >> *stepSize;
-	std::cout<< "\nput file into gummy.cpp folder and enter file name: ";
-	std::cin.clear();
-	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::cin.getline(fileName, 20);
-	std::cout<<"FINISHED GATHERING DATA\n"<<fileName<<std::endl;
-	DenseNet* net = new DenseNet(numLayers, layerSizes, sigmoidOutput, name);
+	std::cout<<"FINISHED GATHERING DATA\n"<<csvFileName<<std::endl;
+	DenseNet* net = new DenseNet(numLayers, layerSizes, sigmoidOutput, netFileName);
 	//net->print();
 	std::cout<<"reading file"<<std::endl;
-	csv* temp = readCSV(fileName);
-	file->data=temp->data;
-	file->numLines=temp->numLines;
-	file->numVals=temp->numVals;
-	csvToDouble(file);
+	trainingData = readCSV(csvFileName);
+	csvToDouble(trainingData);
 	std::cout<<"FINISHED MAKING DENSE NET\n";
 	return net;
 }
 
-void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
+void Gummy::train(DenseNet* net) {
 	std::cout<<"training net"<<std::endl;
 	int percentNum = 1;
 	if (numIterations >= 100) {
@@ -191,29 +146,29 @@ void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
 	Matrix* netOutput = new Matrix(numOut, 1);
 	std::cout<<"made training matrices"<<std::endl;
 	for (int i = 0; i < numIterations; i++) {
-		rowNum = rand() % file->numLines;
+		rowNum = rand() % trainingData->numLines;
 		//std::cout<<"picked a row"<<std::endl;
 		for(int j = 0; j < numIn; j++){
-			inputMatrix->set(j,0,file->numData[rowNum][j]);
+			inputMatrix->set(j,0,trainingData->numData[rowNum][j]);
 		}
 		for(int j = 0; j < numOut; j++){
-			outputMatrix->set(j,0,file->numData[rowNum][j+numIn]);
+			outputMatrix->set(j,0,trainingData->numData[rowNum][j+numIn]);
 		}
 		//std::cout<<"set input and outputs"<<std::endl;
 		
 		net->feedForward(inputMatrix);
 		//std::cout<<"fed forward"<<std::endl;
-		net->backProp(outputMatrix, *stepSize);
+		net->backProp(outputMatrix, stepSize);
 		//std::cout<<"back propped"<<std::endl;
 		if (i%percentNum == 0) {
 			std::cout << "percent done: " << i / percentNum<<"%\n";
 			double error = 0;
-			for(int rowNum = 0; rowNum < file->numLines; rowNum++){
+			for(int rowNum = 0; rowNum < trainingData->numLines; rowNum++){
 				for(int j = 0; j < numIn; j++){
-					inputMatrix->set(j,0,file->numData[rowNum][j]);
+					inputMatrix->set(j,0,trainingData->numData[rowNum][j]);
 				}
 				for(int j = 0; j < numOut; j++){
-					outputMatrix->set(j,0,file->numData[rowNum][j+numIn]);
+					outputMatrix->set(j,0,trainingData->numData[rowNum][j+numIn]);
 				}
 				net->feedForward(inputMatrix);
 				error+=net->calcError(outputMatrix);
@@ -222,16 +177,16 @@ void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
 		}
 	}
 	for(int i = 0; i < 10; i++){
-		rowNum = rand() % file->numLines;
+		rowNum = rand() % trainingData->numLines;
 		std::cout<<"input: ";
 		for(int j = 0; j < numIn; j++){
-			inputMatrix->set(j,0,file->numData[rowNum][j]);
+			inputMatrix->set(j,0,trainingData->numData[rowNum][j]);
 			std::cout<<inputMatrix->get(j,0)<<", ";
 		}
 		std::cout<<std::endl;
 		std::cout<<"desired output: ";
 		for(int j = 0; j < numOut; j++){
-			outputMatrix->set(j,0,file->numData[rowNum][j+numIn]);
+			outputMatrix->set(j,0,trainingData->numData[rowNum][j+numIn]);
 			std::cout<<outputMatrix->get(j,0)<<", ";
 		}
 		std::cout<<std::endl;
@@ -245,11 +200,11 @@ void train(DenseNet* net, int numIterations, double* stepSize, csv* file) {
 	
 }
 
-void saveNet(DenseNet* net){
+void Gummy::saveNet(DenseNet* net){
 	net->save();
 }
 
-DenseNet* loadNet(char* fileName){
+DenseNet* Gummy::loadNet(char* fileName){
 	csv* loadnet = readCSV(fileName);
 	csvToDouble(loadnet);
 	DenseNet* net = new DenseNet(loadnet);
