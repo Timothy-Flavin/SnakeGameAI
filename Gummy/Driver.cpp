@@ -2,6 +2,7 @@
 
 int main(){
     Gummy gummy = Gummy();
+    std::cout<<"Gummy init done";
     DenseNet * userNet = gummy.userInit();
 	userNet->print();
 	bool stillGoing = true;

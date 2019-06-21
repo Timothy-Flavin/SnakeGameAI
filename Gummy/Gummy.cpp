@@ -11,7 +11,10 @@ Gummy::Gummy(){
 	std::cout<< "\nput file into gummy.cpp folder and enter file name: ";
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	//std::cout<<"\ngetting file";
+	csvFileName = new char[20];
 	std::cin.getline(csvFileName, 20);
+	std::cout<<"\ngot file";
 }
 
 csv* Gummy::readCSV(char* fileName) {
@@ -103,6 +106,7 @@ DenseNet* Gummy::userInit() {
 	std::cout<< "\nEnter the file name to save your net: ";
 	std::cin.clear();
 	//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	netFileName = new char[20];
 	std::cin.getline(netFileName, 20);
 	std::cout << "\nWhat type of Neural net do you want?\n1: Dense, 2: Recurrent(NA), 3: convolutional\n";
 	std::cin >> type;
