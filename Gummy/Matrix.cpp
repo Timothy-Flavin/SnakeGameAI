@@ -7,12 +7,12 @@ Matrix::Matrix() {
 	m = 0;
 	n = 0;
 	matrix = NULL;
-	srand(time(NULL));
+	//srand(time(0));
 }
 Matrix::Matrix(int n1, int n2) {
 	m = n1;
 	n = n2;
-	srand(time(NULL));
+	//srand(time(0));
 	matrix = new double*[m];
 	for (int i = 0; i < m; i++) {
 		matrix[i] = new double[n];

@@ -8,7 +8,7 @@ void playGames(DenseNet* n1, DenseNet* n2, int numGames, std::ofstream* of);
 char board[9];
 	
 int main(){
-	srand(time(NULL));
+	
 	for(int i = 0; i < 9;i++){
 		board[i]='-';
 	}
@@ -18,18 +18,36 @@ int main(){
     std::cout<<"Gummy init done";
 	DenseNet* n1;
 	DenseNet* n2;
-	DenseNet* net1 = gummy.userInit();
-	DenseNet* net2 = gummy.userInit();
-	DenseNet* net3 = gummy.userInit();
-	DenseNet* net4 = gummy.userInit();
-	DenseNet* net5 = gummy.userInit();
-	DenseNet* net6 = gummy.userInit();
-	std::ofstream of;
-	of.open("gameData.csv");
+	int layerSizes[4];
+	layerSizes[0]=9;
+	layerSizes[1]=24;
+	layerSizes[2]=24;
+	layerSizes[3]=9;
+	srand(time(0));
+	DenseNet* net1 = gummy.manualInit("gameData.csv", "p1", 1, 4, layerSizes, true);
+	//srand(time(0));
+	DenseNet* net2 = gummy.manualInit("gameData.csv", "p2", 1, 4, layerSizes, true);
+	//srand(time(0));
+	DenseNet* net3 = gummy.manualInit("gameData.csv", "p3", 1, 4, layerSizes, true);
+	//srand(time(0));
+	DenseNet* net4 = gummy.manualInit("gameData.csv", "p4", 1, 4, layerSizes, true);
+	//srand(time(0));
+	DenseNet* net5 = gummy.manualInit("gameData.csv", "p5", 1, 4, layerSizes, true);
+	//srand(time(0));
+	DenseNet* net6 = gummy.manualInit("gameData.csv", "p6", 1, 4, layerSizes, true);
+	net1->print();
+	net2->print();
+	std::cin.get();
+	std::ofstream* of;
+	std::ofstream ofl;
+	of = &ofl;
+	//of->open("gameData.csv");
 	std::cout<<"done constructing nets 1 and 2. "<<std::endl;
 	gummy.setCsvFileName("gameData.csv");
 	int netnum = 0;
-	of.open("gameData.csv");
+	std::cout<<"set csv"<<std::endl;
+	of->open("gameData.csv");
+	std::cout<<"opened gameData"<<std::endl;
 	for(int i = 0; i < 40; i++){
 		netnum = rand()%6;
 		switch(netnum){
@@ -73,16 +91,20 @@ int main(){
 				n2 = net6;
 			break;
 		}
-		playGames(n1, n2, 2, &of);
+		playGames(n1, n2, 2, of);
 	}
-	of.close();
+	of->close();
+	std::cout<<"done playing sample games"<<std::endl;
+	net1->print();
+	net2->print();
+	std::cin.get();
 	gummy.updateTrainingData(true);
 	gummy.train(net1);
 	gummy.train(net2);
 	for(int i = 0; i < 10; i++){
-		of.open("gameData.csv");
-		playGames(net1, net2, 2, &of);
-		of.close();
+		of->open("gameData.csv");
+		playGames(net1, net2, 2, of);
+		of->close();
 		gummy.updateTrainingData(true);
 		std::cin.get();
 		gummy.train(net1);

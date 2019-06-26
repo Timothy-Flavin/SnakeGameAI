@@ -2,7 +2,7 @@
 
 Gummy::Gummy(){
 	std::cout<<"constructing Gummy"<<std::endl;
-	srand(time(NULL));
+	srand(time(0));
 	//csvFileName = new char[20];
 	std::cout << "\nChoose number of iterations to train: ";
 	std::cin >> numIterations;
@@ -14,6 +14,8 @@ Gummy::Gummy(){
 	//std::cout<<"\ngetting file";
 	csvFileName = new char[20];
 	std::cin.getline(csvFileName, 20);
+	trainingData = readCSV(csvFileName);
+	csvToDouble(trainingData);
 	std::cout<<"\ngot file";
 }
 
@@ -85,8 +87,8 @@ void Gummy::csvToDouble(csv* file) {
 		int vals = 0;
 		for (int j = 0; j < file->data[i].size(); j++) {
 			if (file->data[i].at(j) == ',') {
-				std::cout<<"commaPos: "<<commaPos<<", j: "<<j<<", j-commaPos: "<<j-commaPos<<std::endl;
-				std::cout << file->data[i].substr(commaPos, j - commaPos)<<std::endl;
+				//std::cout<<"commaPos: "<<commaPos<<", j: "<<j<<", j-commaPos: "<<j-commaPos<<std::endl;
+				//std::cout << file->data[i].substr(commaPos, j - commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
 				//std::cout<<file->numData[i][vals]<<',';
 				commaPos = j+1;
@@ -94,7 +96,7 @@ void Gummy::csvToDouble(csv* file) {
 			}
 			else if (j == file->data[i].size() - 1) {
 				//std::cout << "\nsecond if";
-				std::cout<<"second if " << file->data[i].substr(commaPos)<<std::endl;
+				//std::cout<<"second if " << file->data[i].substr(commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos));
 				//std::cout<<file->numData[i][vals]<<',';
 				commaPos = j;
@@ -105,8 +107,11 @@ void Gummy::csvToDouble(csv* file) {
 	}
 }
 
-DenseNet* Gummy::manualInit(){
-
+DenseNet* Gummy::manualInit(char* fileName, char* nFileName, int ntype, int numLayers, int* layerSizes, bool sigmoid){
+	csvFileName = fileName;
+	type = ntype;
+	netFileName=nFileName;
+	return new DenseNet(numLayers, layerSizes, sigmoid, netFileName);
 }
 DenseNet* Gummy::userInit() {
 	std::cout<< "\nEnter the file name to save your net: ";
