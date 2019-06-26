@@ -4,10 +4,11 @@ bool checkWin(char player);
 bool checkLegal(int pos, char player);
 void setInput(Matrix* numberBoard, char turn);
 void setData(int** data, int turn, Matrix* numData, int pos);
-void playGames(DenseNet* n1, DenseNet* n2, int numGames);
+void playGames(DenseNet* n1, DenseNet* n2, int numGames, std::ofstream* of);
 char board[9];
 	
 int main(){
+	srand(time(NULL));
 	for(int i = 0; i < 9;i++){
 		board[i]='-';
 	}
@@ -15,14 +16,88 @@ int main(){
 	//char ** 9 by 28 then 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
-    DenseNet * userNet = gummy.userInit();
-	userNet->print();
-	bool stillGoing = true;
+	DenseNet* n1;
+	DenseNet* n2;
+	DenseNet* net1 = gummy.userInit();
+	DenseNet* net2 = gummy.userInit();
+	DenseNet* net3 = gummy.userInit();
+	DenseNet* net4 = gummy.userInit();
+	DenseNet* net5 = gummy.userInit();
+	DenseNet* net6 = gummy.userInit();
+	std::ofstream of;
+	of.open("gameData.csv");
+	std::cout<<"done constructing nets 1 and 2. "<<std::endl;
+	gummy.setCsvFileName("gameData.csv");
+	int netnum = 0;
+	of.open("gameData.csv");
+	for(int i = 0; i < 40; i++){
+		netnum = rand()%6;
+		switch(netnum){
+			case 0:
+				n1 = net1;
+			break;
+			case 1:
+				n1 = net2;
+			break;
+			case 2:
+				n1 = net3;
+			break;
+			case 3:
+				n1 = net4;
+			break;
+			case 4:
+				n1 = net5;
+			break;
+			case 5:
+				n1 = net6;
+			break;
+		}
+		netnum = rand()%6;
+		switch(netnum){
+			case 0:
+				n2 = net1;
+			break;
+			case 1:
+				n2 = net2;
+			break;
+			case 2:
+				n2 = net3;
+			break;
+			case 3:
+				n2 = net4;
+			break;
+			case 4:
+				n2 = net5;
+			break;
+			case 5:
+				n2 = net6;
+			break;
+		}
+		playGames(n1, n2, 2, &of);
+	}
+	of.close();
+	gummy.updateTrainingData(true);
+	gummy.train(net1);
+	gummy.train(net2);
+	for(int i = 0; i < 10; i++){
+		of.open("gameData.csv");
+		playGames(net1, net2, 2, &of);
+		of.close();
+		gummy.updateTrainingData(true);
+		std::cin.get();
+		gummy.train(net1);
+		gummy.train(net2);
+	}
+	std::cout<<"done playing games"<<std::endl;
+
+    //DenseNet * userNet = gummy.userInit();
+	//userNet->print();
+	/*bool stillGoing = true;
     int numIterations=0;
     double stepSize=0;
 	while(stillGoing){
 		stillGoing=false;
-		gummy.train(userNet);
+		//gummy.train(userNet);
 		std::cout<<"would you like to train more? y/n"<<std::endl;
 		char ans = 'a';
 		std::cin>>ans;
@@ -36,7 +111,8 @@ int main(){
             gummy.setStepSize(stepSize);
 		}
 	}
-	gummy.saveNet(userNet);
+	*/
+	//gummy.saveNet(userNet);
 	//DenseNet* copy = gummy.loadNet(userNet->getName());
 	//copy->setName("copy.csv");
 	//gummy.saveNet(copy);
@@ -131,7 +207,8 @@ void setData(int** data, int turn, Matrix* numData, int pos){
 
 void record(int** data, std::ofstream* oFile, int numLines){
 	for(int i = 0; i < numLines; i++){
-		for(int j = 0; j < 9; j++){
+		
+		for(int j = 0; j < 18; j++){
 			if(j!=0) *oFile<<',';
 			*oFile<<data[i][j];
 		}
@@ -139,8 +216,8 @@ void record(int** data, std::ofstream* oFile, int numLines){
 	}
 }
 
-void playGames(DenseNet* n1, DenseNet* n2, int numGames){
-	
+void playGames(DenseNet* net1, DenseNet* net2, int numGames, std::ofstream* gameDataFile){
+	std::cout<<"setting up data"<<std::endl;
 	int numGamesWithCats = 0;
 	int** n1data = new int*[5];
 	for(int i = 0; i < 5; i++){
@@ -152,13 +229,30 @@ void playGames(DenseNet* n1, DenseNet* n2, int numGames){
 	}
 	int** data;
 	int numDataPoints = 0;
-	std::ofstream* gameDataFile;
-	gameDataFile->open("gameData.csv");
+	std::cout<<"opening gameData.csv file"<<std::endl;
+	//gameDataFile->open("gameData.csv");
+	std::cout<<"creating matrices"<<std::endl;
 	Matrix* numberBoard = new Matrix(9,1);
 	Matrix* chosenSpace = new Matrix(9,1);
+	std::cout<<"entering game loop"<<std::endl;
+
+	DenseNet* n1;
+	DenseNet* n2;
+	bool firstPlayer = true;
+
 	for(int ga = 0; ga < numGames; ga++){
+		if(firstPlayer){
+			n1 = net1;
+			n2 = net2;
+		}
+		else{
+			n1 = net2;
+			n2 = net1;
+		}
+		firstPlayer = !firstPlayer;
 		bool reset = true;
 		while(reset){
+			
 			numGamesWithCats++;
 			numDataPoints=0;
 			reset = false;
@@ -167,17 +261,39 @@ void playGames(DenseNet* n1, DenseNet* n2, int numGames){
 			bool cat = false;
 			bool p1 = true;
 			int turn = 0, xTurn=0, oTurn=0;
-			
+			std::cout<<"finished setting game data"<<std::endl;
+
 			while(!xwon&&!owon&&!cat){
+
+				std::cout<<"setting input, p1: "<<p1<<std::endl;
 				setInput(numberBoard, p1?'x':'o');
-				delete chosenSpace;
-				chosenSpace = p1?n1->feedForward(numberBoard):n2->feedForward(numberBoard);
+				//delete chosenSpace;
+				std::cout<<"feeding forward"<<std::endl;
+				chosenSpace = p1?(n1->feedForward(numberBoard)):(n2->feedForward(numberBoard));
+				//chosenSpace->print();
+				std::cout<<"choosing position"<<std::endl;
 				int pos=0;
+				double posAmount = 0;
 				for(int i = 0; i < chosenSpace->getM(); i++) 
-					pos=chosenSpace->get(i,0)>pos?i:pos;
+					if(chosenSpace->get(i,0)>posAmount){
+						posAmount = chosenSpace->get(i,0);
+						pos=i;
+					}
+				std::cout<<"position: "<<pos<<std::endl;
+				std::cout<<"setting data"<<std::endl;
 				setData(p1?n1data:n2data, p1?xTurn:oTurn, numberBoard, pos);
 				turn++;
 				p1?xTurn++:oTurn++;
+
+				std::cout<<"printing game state at turn "<<turn-1<<std::endl;
+				std::cout<<"player "<<(p1?'x':'o')<<", choice: "<<pos<<std::endl;
+				for(int r = 0; r < 3; r++){
+					for(int c = 0; c < 3; c++){
+						std::cout<<board[r*3+c];
+					}
+					std::cout<<std::endl;
+				}
+				std::cout<<"checking legality and setting board"<<std::endl;
 				(p1?owon:xwon) = !checkLegal(pos,p1?'x':'o'); //set's the board too
 				if(p1?!owon:!xwon){
 					(p1?xwon:owon) = checkWin(p1?'x':'o');
@@ -185,24 +301,29 @@ void playGames(DenseNet* n1, DenseNet* n2, int numGames){
 					cat=true;
 				}
 				p1=!p1;
+				std::cout<<"done with turn "<<turn-1<<std::endl;
 			}
 			if(xwon){ 
+				std::cout<<"recording x data"<<std::endl;
 				record(n1data, gameDataFile, xTurn);
 			}
 			else if(owon){
+				std::cout<<"recording o data"<<std::endl;
 				record(n2data, gameDataFile, oTurn);
 			}
 			if(cat){
+				std::cout<<"resetting from cat"<<std::endl;
 				reset = true;
 			} else{
 
 			}
-		}
-		for(int i = 0; i < numDataPoints; i++){
-			std::cout<<data[i]<<std::endl;
+			for(int i = 0; i < 9; i++){
+				board[i]='-';
+			}
 		}
 	}
 	delete numberBoard;
+	//gameDataFile->close();
 }
 /*
 std::ofstream outfile;

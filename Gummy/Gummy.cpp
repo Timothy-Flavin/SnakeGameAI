@@ -60,6 +60,7 @@ csv* Gummy::readCSV(char* fileName) {
 	std::cout<<"got num vals"<<std::endl;
 	std::cout << "\nnumVals: " << numVals<<std::endl;
 	file->numVals = numVals;
+	infile.close();
 	return file;
 }
 void Gummy::updateTrainingData(bool numbersOnly) {
@@ -71,7 +72,7 @@ void Gummy::csvToDouble(csv* file) {
 	std::cout << "------------------------CSV TO DOUBLE---------------\n";
 	file->numData = new double*[file->numLines];
 	for (int i = 0; i < file->numLines; i++) {
-		//std::cout << "starting thing\n";
+		std::cout << "starting thing\n";
 		int valCount = 1;
 		for (int j = 0; j < file->data[i].size(); j++) {
 			if(file->data[i].at(j) == ','){
@@ -79,21 +80,23 @@ void Gummy::csvToDouble(csv* file) {
 			}
 		}
 		file->numData[i] = new double[valCount];
-		//std::cout << "after error thing\n";
+		std::cout << "after error thing\n";
 		int commaPos = 0;
 		int vals = 0;
 		for (int j = 0; j < file->data[i].size(); j++) {
 			if (file->data[i].at(j) == ',') {
-				//std::cout << "\nfirst if";
+				std::cout<<"commaPos: "<<commaPos<<", j: "<<j<<", j-commaPos: "<<j-commaPos<<std::endl;
+				std::cout << file->data[i].substr(commaPos, j - commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
-				std::cout<<file->numData[i][vals]<<',';
+				//std::cout<<file->numData[i][vals]<<',';
 				commaPos = j+1;
 				vals++;
 			}
 			else if (j == file->data[i].size() - 1) {
 				//std::cout << "\nsecond if";
+				std::cout<<"second if " << file->data[i].substr(commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos));
-				std::cout<<file->numData[i][vals]<<',';
+				//std::cout<<file->numData[i][vals]<<',';
 				commaPos = j;
 				vals++;
 			}
@@ -102,9 +105,13 @@ void Gummy::csvToDouble(csv* file) {
 	}
 }
 
+DenseNet* Gummy::manualInit(){
+
+}
 DenseNet* Gummy::userInit() {
 	std::cout<< "\nEnter the file name to save your net: ";
 	std::cin.clear();
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	netFileName = new char[20];
 	std::cin.getline(netFileName, 20);
@@ -140,7 +147,7 @@ void Gummy::train(DenseNet* net) {
 		percentNum = numIterations / 100;
 	}
 	std::cout<<"assigned percent "<<numIterations<<std::endl;
-	net->print();
+	//net->print();
 	int rowNum = 0;
 	int numIn = net->getNumInputs();
 	int numOut = net->getNumOutputs();

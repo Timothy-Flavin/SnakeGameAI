@@ -18,6 +18,7 @@ class Gummy {
     public:
         Gummy();
         DenseNet* userInit();
+        DenseNet* manualInit();
         void train(DenseNet* net);
         void saveNet(DenseNet* net);
         DenseNet* loadNet(char* fileName);
