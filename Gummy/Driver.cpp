@@ -1,8 +1,10 @@
 #include "Gummy.h"
 #include<string>
-bool checkWin(int pos);
-bool checkLose(int pos);
-void checkMove(Matrix* output);
+bool checkWin(char player);
+bool checkLegal(int pos, char player);
+void setInput(Matrix* numberBoard, char turn);
+void setData(int** data, int turn, Matrix* numData, int pos);
+void playGames(DenseNet* n1, DenseNet* n2, int numGames);
 char board[9];
 	
 int main(){
@@ -46,10 +48,42 @@ int main(){
 }
 
 bool checkWin(char player){
+	if(board[0]==player && board[1]==player && board[2]==player){
+		return true;
+	}
+	else if(board[3]==player && board[4]==player && board[5]==player){
+		return true;
+	}
+	else if(board[6]==player && board[7]==player && board[8]==player){
+		return true;
+	}
 
+	else if(board[0]==player && board[3]==player && board[6]==player){
+		return true;
+	}
+	else if(board[1]==player && board[4]==player && board[7]==player){
+		return true;
+	}
+	else if(board[2]==player && board[5]==player && board[8]==player){
+		return true;
+	}
+
+	else if(board[0]==player && board[4]==player && board[8]==player){
+		return true;
+	}
+	else if(board[2]==player && board[4]==player && board[6]==player){
+		return true;
+	} else{
+		return false;
+	}
 }
 bool checkLegal(int pos, char player){
-
+	if(board[pos]=='-'){
+		board[pos]=player;
+		return true;
+	} else{
+		return false;
+	}
 }
 
 void setInput(Matrix* numberBoard, char turn){
@@ -95,8 +129,19 @@ void setData(int** data, int turn, Matrix* numData, int pos){
 	}
 }
 
+void record(int** data, std::ofstream* oFile, int numLines){
+	for(int i = 0; i < numLines; i++){
+		for(int j = 0; j < 9; j++){
+			if(j!=0) *oFile<<',';
+			*oFile<<data[i][j];
+		}
+		*oFile<<std::endl;
+	}
+}
+
 void playGames(DenseNet* n1, DenseNet* n2, int numGames){
-	bool reset = true;
+	
+	int numGamesWithCats = 0;
 	int** n1data = new int*[5];
 	for(int i = 0; i < 5; i++){
 		n1data[i] = new int[18];
@@ -107,63 +152,55 @@ void playGames(DenseNet* n1, DenseNet* n2, int numGames){
 	}
 	int** data;
 	int numDataPoints = 0;
+	std::ofstream* gameDataFile;
+	gameDataFile->open("gameData.csv");
 	Matrix* numberBoard = new Matrix(9,1);
 	Matrix* chosenSpace = new Matrix(9,1);
-	while(reset){
-		numDataPoints=0;
-		reset = false;
-		bool xwon= false;
-		bool owon= false;
-		bool cat = false;
-		int turn = 0, xTurn=0, oTurn=0;
-		
-		while(!xwon&&!owon&&!cat){
-			setInput(numberBoard, 'x');
-			delete chosenSpace;
-			chosenSpace = n1->feedForward(numberBoard);
-			int pos=0;
-			for(int i = 0; i < chosenSpace->getM(); i++) 
-				pos=chosenSpace->get(i,0)>pos?i:pos;
-			setData(n1data, xTurn, numberBoard, pos);
-			turn++;
-			xTurn++;
-			owon = !checkLegal(pos,'x'); //set's the board too
-			if(!owon){
-				xwon = checkWin('x');
-			} else if(!owon&&!xwon&&turn==8){
-				cat=true;
-			}
-
-			if(!xwon&&!cat&&!owon){
-				setInput(numberBoard, 'o');
+	for(int ga = 0; ga < numGames; ga++){
+		bool reset = true;
+		while(reset){
+			numGamesWithCats++;
+			numDataPoints=0;
+			reset = false;
+			bool xwon= false;
+			bool owon= false;
+			bool cat = false;
+			bool p1 = true;
+			int turn = 0, xTurn=0, oTurn=0;
+			
+			while(!xwon&&!owon&&!cat){
+				setInput(numberBoard, p1?'x':'o');
 				delete chosenSpace;
-				chosenSpace = n2->feedForward(numberBoard);
-				pos=0;
+				chosenSpace = p1?n1->feedForward(numberBoard):n2->feedForward(numberBoard);
+				int pos=0;
 				for(int i = 0; i < chosenSpace->getM(); i++) 
 					pos=chosenSpace->get(i,0)>pos?i:pos;
-				setData(n2data, oTurn, numberBoard, pos);
+				setData(p1?n1data:n2data, p1?xTurn:oTurn, numberBoard, pos);
 				turn++;
-				oTurn++;
-				xwon = !checkLegal(pos,'o');
-				if(!xwon){
-					owon = checkWin('o');
+				p1?xTurn++:oTurn++;
+				(p1?owon:xwon) = !checkLegal(pos,p1?'x':'o'); //set's the board too
+				if(p1?!owon:!xwon){
+					(p1?xwon:owon) = checkWin(p1?'x':'o');
+				} else if(!owon&&!xwon&&turn==8){
+					cat=true;
 				}
+				p1=!p1;
+			}
+			if(xwon){ 
+				record(n1data, gameDataFile, xTurn);
+			}
+			else if(owon){
+				record(n2data, gameDataFile, oTurn);
+			}
+			if(cat){
+				reset = true;
+			} else{
+
 			}
 		}
-		if(xwon){ 
-			data = n1data;
-			numDataPoints = xTurn;
+		for(int i = 0; i < numDataPoints; i++){
+			std::cout<<data[i]<<std::endl;
 		}
-		else if(owon){
-			data = n2data;
-			numDataPoints = oTurn;
-		}
-		else if(cat){
-			reset = true;
-		}
-	}
-	for(int i = 0; i < numDataPoints; i++){
-		std::cout<<data[i]<<std::endl;
 	}
 	delete numberBoard;
 }
