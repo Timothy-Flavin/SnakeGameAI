@@ -26,27 +26,29 @@ int main(){
 	int numNets = 1;
 	
 	DenseNet** nets = new DenseNet*[numNets];
-	//nets[0]=gummy.loadNet("ticTacToeNet.csv");
-	//nets[0]->print();
-	
 	for(int i = 0; i < numNets; i++){
-		nets[i]=gummy.manualInit("gameData.csv", "ticTacToeNet.csv", 1, 4, layerSizes, true);
+		nets[i]=gummy.loadNet("ticTacToeNet.csv");
+		//.manualInit("gameData.csv", "ticTacToeNet.csv", 1, 4, layerSizes, true);
 	}
-	
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
 	//of->open("gameData.csv");
 	std::cout<<"done constructing nets 1 and 2. "<<std::endl;
 	gummy.setCsvFileName("gameData.csv");
+	gummy.updateTrainingData(true);
+	for(int j = 0; j < numNets; j++){
+		//gummy.train(nets[j]);
+		//gummy.train(nets[j]);
+	}
 	std::cin.get();
 	char save = 'n';
 	for(int i = 0; i < 100; i++){
 		of->open("gameData.csv");
-		playGames(nets[0], 500, of);
+		playGames(nets[0], 2000, of);
 		of->close();
 		std::cout<<"save net? ";
 		std::cin>>save;
-		if(save){
+		if(save == 'y'){
 			gummy.saveNet(nets[0]);
 		}
 		std::cout<<"updating training data"<<std::endl;
@@ -349,6 +351,7 @@ void playGames(DenseNet* net1, int numGames, std::ofstream* gameDataFile){
 				double posAmount = 0;
 				if(p1){
 					std::cout<<"net turn"<<std::endl;
+					//n1->print();
 					chosenSpace = n1->feedForward(numberBoard);
 					chosenSpace->print();
 					for(int i = 0; i < chosenSpace->getM(); i++) 
@@ -358,12 +361,13 @@ void playGames(DenseNet* net1, int numGames, std::ofstream* gameDataFile){
 						}
 					std::cout<<"pos: "<<pos<<std::endl;
 				} else{
-					std::cout<<"Choose position for o: ";
-					std::cin>>pos;
-					/*do{
+					/*std::cout<<"Choose position for o: ";
+					std::cin.clear();
+					std::cin>>pos;*/
+					do{
 						pos=rand()%9;
 					}while(board[pos]!='-');
-					*/
+					
 				}
 				//chosenSpace->print();
 				//std::cout<<"choosing position"<<std::endl;
@@ -377,14 +381,7 @@ void playGames(DenseNet* net1, int numGames, std::ofstream* gameDataFile){
 				turn++;
 				p1?xTurn++:oTurn++;
 
-				std::cout<<"printing game state at turn "<<turn-1<<std::endl;
-				std::cout<<"player "<<(p1?'x':'o')<<", choice: "<<pos<<std::endl;
-				for(int r = 0; r < 3; r++){
-					for(int c = 0; c < 3; c++){
-						std::cout<<board[r*3+c];
-					}
-					std::cout<<std::endl;
-				}
+				
 				std::cout<<"checking legality and setting board"<<std::endl;
 				(p1?owon:xwon) = !checkLegal(pos,p1?'x':'o'); //set's the board too
 				if(p1?!owon:!xwon){
@@ -392,6 +389,14 @@ void playGames(DenseNet* net1, int numGames, std::ofstream* gameDataFile){
 				} else if(!owon&&!xwon&&turn>=8){
 					std::cout<<"cat"<<std::endl;
 					cat=true;
+				}
+				std::cout<<"printing game state at turn "<<turn-1<<std::endl;
+				std::cout<<"player "<<(p1?'x':'o')<<", choice: "<<pos<<std::endl;
+				for(int r = 0; r < 3; r++){
+					for(int c = 0; c < 3; c++){
+						std::cout<<board[r*3+c];
+					}
+					std::cout<<std::endl;
 				}
 				p1=!p1;
 				std::cout<<"done with turn "<<turn-1<<std::endl;

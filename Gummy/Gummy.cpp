@@ -21,7 +21,7 @@ Gummy::Gummy(){
 
 csv* Gummy::readCSV(char* fileName) {
 	std::ifstream infile;
-	//std::cout<<"file being read "<<fileName<<std::endl;
+	std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
 	//std::cout<<"opened file"<<std::endl;
 	int curLine = 0;
@@ -52,7 +52,7 @@ csv* Gummy::readCSV(char* fileName) {
 		//std::cout << file->data[curLine] << std::endl;
 		curLine++;
 	}
-	//std::cout<<"filled file"<<std::endl;
+	std::cout<<"filled file"<<std::endl;
 	int numVals = 1;
 	for (int i = 0; i < file->data[0].size(); i++) {
 		if (file->data[0].at(i) == ',') {
@@ -74,7 +74,7 @@ void Gummy::csvToDouble(csv* file) {
 	std::cout << "------------------------CSV TO DOUBLE---------------\n";
 	file->numData = new double*[file->numLines];
 	for (int i = 0; i < file->numLines; i++) {
-		std::cout << "starting thing\n";
+		//std::cout << "starting thing\n";
 		int valCount = 1;
 		for (int j = 0; j < file->data[i].size(); j++) {
 			if(file->data[i].at(j) == ','){
@@ -82,7 +82,7 @@ void Gummy::csvToDouble(csv* file) {
 			}
 		}
 		file->numData[i] = new double[valCount];
-		std::cout << "after error thing\n";
+		//std::cout << "after error thing\n";
 		int commaPos = 0;
 		int vals = 0;
 		for (int j = 0; j < file->data[i].size(); j++) {
@@ -91,7 +91,7 @@ void Gummy::csvToDouble(csv* file) {
 				//std::cout << file->data[i].substr(commaPos, j - commaPos)<<std::endl;
 				try{
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
-				std::cout<<file->numData[i][vals]<<',';
+				//std::cout<<file->numData[i][vals]<<',';
 				} catch(std::invalid_argument){
 					std::cout<<"i: "<<i<<", comma pos: "<<commaPos<<", j: "<<j<<std::endl;
 					std::cout<<"file data: "<<file->data[i].substr(commaPos, j-commaPos);
@@ -100,7 +100,7 @@ void Gummy::csvToDouble(csv* file) {
 				vals++;
 			}
 			else if (j == file->data[i].size() - 1) {
-				std::cout << "\nsecond if";
+				//std::cout << "\nsecond if";
 				//std::cout<<"second if " << file->data[i].substr(commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos));
 				//std::cout<<file->numData[i][vals]<<',';
@@ -229,4 +229,5 @@ DenseNet* Gummy::loadNet(char* fileName){
 	csv* loadnet = readCSV(fileName);
 	csvToDouble(loadnet);
 	DenseNet* net = new DenseNet(loadnet);
+	return net;
 }
