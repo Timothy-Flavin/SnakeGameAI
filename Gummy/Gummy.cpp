@@ -2,7 +2,7 @@
 
 Gummy::Gummy(){
 	std::cout<<"constructing Gummy"<<std::endl;
-	srand(time(0));
+	//srand(time(0));
 	//csvFileName = new char[20];
 	std::cout << "\nChoose number of iterations to train: ";
 	std::cin >> numIterations;
@@ -16,51 +16,51 @@ Gummy::Gummy(){
 	std::cin.getline(csvFileName, 20);
 	trainingData = readCSV(csvFileName);
 	csvToDouble(trainingData);
-	std::cout<<"\ngot file";
+	//std::cout<<"\ngot file";
 }
 
 csv* Gummy::readCSV(char* fileName) {
 	std::ifstream infile;
-	std::cout<<"file being read "<<fileName<<std::endl;
+	//std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
-	std::cout<<"opened file"<<std::endl;
+	//std::cout<<"opened file"<<std::endl;
 	int curLine = 0;
 	std::string dead = "";
 	while (std::getline(infile,dead)) {
 		curLine++;
-		std::cout<<"why not working"<<std::endl;
+		//std::cout<<"why not working"<<std::endl;
 		//infile>>dead;
-		std::cout<<infile.good()<<", got line "<<curLine<<", "<<dead<<std::endl;
+		//std::cout<<infile.good()<<", got line "<<curLine<<", "<<dead<<std::endl;
 		/*if(infile.good()==0){
 			std::cout<<"done"<<std::endl;
 			break;
 		}*/
 	}
-	std::cout << "line num: "<<curLine<<std::endl; //<< curLine;
+	//std::cout << "line num: "<<curLine<<std::endl; //<< curLine;
 	infile.clear();
-	std::cout<<"cleared"<<std::endl;
+	//std::cout<<"cleared"<<std::endl;
 	infile.seekg(0, std::ios::beg);
-	std::cout<<"seeked 0"<<std::endl;
+	//std::cout<<"seeked 0"<<std::endl;
 	csv* file = new csv;
 	file->name = fileName;
 	file->numLines = curLine;
-	std::cout<<"made num lines"<<std::endl;
+	//std::cout<<"made num lines"<<std::endl;
 	file->data = new std::string[curLine];
 	curLine = 0;
-	std::cout<<"made empty file"<<std::endl;
+	//std::cout<<"made empty file"<<std::endl;
 	while (std::getline(infile, file->data[curLine])) {
-		std::cout << file->data[curLine] << std::endl;
+		//std::cout << file->data[curLine] << std::endl;
 		curLine++;
 	}
-	std::cout<<"filled file"<<std::endl;
+	//std::cout<<"filled file"<<std::endl;
 	int numVals = 1;
 	for (int i = 0; i < file->data[0].size(); i++) {
 		if (file->data[0].at(i) == ',') {
 			numVals++;
 		}
 	}
-	std::cout<<"got num vals"<<std::endl;
-	std::cout << "\nnumVals: " << numVals<<std::endl;
+	//std::cout<<"got num vals"<<std::endl;
+	//std::cout << "\nnumVals: " << numVals<<std::endl;
 	file->numVals = numVals;
 	infile.close();
 	return file;
@@ -89,13 +89,18 @@ void Gummy::csvToDouble(csv* file) {
 			if (file->data[i].at(j) == ',') {
 				//std::cout<<"commaPos: "<<commaPos<<", j: "<<j<<", j-commaPos: "<<j-commaPos<<std::endl;
 				//std::cout << file->data[i].substr(commaPos, j - commaPos)<<std::endl;
+				try{
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos, j - commaPos));
-				//std::cout<<file->numData[i][vals]<<',';
+				std::cout<<file->numData[i][vals]<<',';
+				} catch(std::invalid_argument){
+					std::cout<<"i: "<<i<<", comma pos: "<<commaPos<<", j: "<<j<<std::endl;
+					std::cout<<"file data: "<<file->data[i].substr(commaPos, j-commaPos);
+				}
 				commaPos = j+1;
 				vals++;
 			}
 			else if (j == file->data[i].size() - 1) {
-				//std::cout << "\nsecond if";
+				std::cout << "\nsecond if";
 				//std::cout<<"second if " << file->data[i].substr(commaPos)<<std::endl;
 				file->numData[i][vals] = std::stod(file->data[i].substr(commaPos));
 				//std::cout<<file->numData[i][vals]<<',';
@@ -103,7 +108,7 @@ void Gummy::csvToDouble(csv* file) {
 				vals++;
 			}
 		}
-		std::cout<<std::endl;
+		//std::cout<<std::endl;
 	}
 }
 
@@ -189,7 +194,7 @@ void Gummy::train(DenseNet* net) {
 				net->feedForward(inputMatrix);
 				error+=net->calcError(outputMatrix);
 			}
-			std::cout<<"error: "<<error<<std::endl;
+			std::cout<<"error: "<<error/trainingData->numLines<<std::endl;
 		}
 	}
 	for(int i = 0; i < 10; i++){
