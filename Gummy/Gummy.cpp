@@ -183,6 +183,7 @@ void Gummy::train(DenseNet* net) {
 		//std::cout<<"back propped"<<std::endl;
 		if (i%percentNum == 0) {
 			std::cout << "percent done: " << i / percentNum<<"%\n";
+			/*
 			double error = 0;
 			for(int rowNum = 0; rowNum < trainingData->numLines; rowNum++){
 				for(int j = 0; j < numIn; j++){
@@ -195,6 +196,7 @@ void Gummy::train(DenseNet* net) {
 				error+=net->calcError(outputMatrix);
 			}
 			std::cout<<"error: "<<error/trainingData->numLines<<std::endl;
+			*/
 		}
 	}
 	for(int i = 0; i < 10; i++){
