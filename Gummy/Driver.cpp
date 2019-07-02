@@ -11,13 +11,13 @@ int fruitX = 0;
 int fruitY = 0;
 const int WIDTH = 20;
 const int HEIGHT = 20;
-int board[WIDTH*HEIGHT];
+char board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
 int dir = 0;
 bool lost = false;
 
-
+void update();
 void init();
 void clearBoard();
 void printBoard();
@@ -28,6 +28,14 @@ void updateBoard();
 void updateGameState();
 	
 int main(){
+	srand(time(0));
+	init();
+	while(!lost){
+		std::cin>>dir;
+		//dir = rand()%3;
+		update();
+		printBoard();
+	}
 	bool load = true;
 	std::cout<<"load or save? 1, 0: "<<std::endl;
 	std::cin>>load; 
@@ -37,7 +45,6 @@ int main(){
 	layerSizes[0]=27;
 	layerSizes[1]=243;
 	layerSizes[2]=9;
-	srand(time(0));
 	int numNets = 1;
 	
 	DenseNet** nets = new DenseNet*[numNets];
@@ -61,17 +68,18 @@ int main(){
 }
 
 void printBoard(){
-	for(int w = 0; w < WIDTH; w++){
+	for(int w = 0; w < WIDTH+2; w++){
 			std::cout<<'-';
-		}
+	}
+	std::cout<<std::endl;
 	for(int h = 0; h < HEIGHT; h++){
 		std::cout<<'|';
 		for(int w = 0; w < WIDTH; w++){
-			std::cout<<board[h*3+w];
+			std::cout<<board[h*WIDTH+w];
 		}
 		std::cout<<'|'<<std::endl;
 	}
-	for(int w = 0; w < WIDTH; w++){
+	for(int w = 0; w < WIDTH+2; w++){
 			std::cout<<'-';
 	}
 }
@@ -85,7 +93,7 @@ void init(){
 void clearBoard(){
 	for(int h = 0; h < HEIGHT; h++){
 		for(int w = 0; w < WIDTH; w++){
-			board[h*3+w]=' ';
+			board[h*WIDTH+w]=' ';
 		}
 	}
 }
@@ -97,7 +105,7 @@ void resetSnake(){
 	for(int i = 1; i < WIDTH*HEIGHT; i++){
 		snake[i].x = WIDTH/2;
 		snake[i].y = HEIGHT/2;
-		dir = 0;
+		//dir = 0;
 	}
 }
 
@@ -105,19 +113,23 @@ void spawnFruit(){
 	do{
 		fruitX = rand()%WIDTH;
 		fruitY = rand()%HEIGHT;
+		std::cout<<fruitX<<", "<<fruitY<<std::endl;
 	}while(board[fruitY*WIDTH+fruitX]!=' ');
 	board[fruitY*WIDTH+fruitX]='@';
 }
 
 void update(){
+	std::cout<<"updating Snake"<<std::endl;
 	updateSnake();
+	std::cout<<"updating Board"<<std::endl;
 	updateBoard();
+	std::cout<<"updating GameState"<<std::endl;
 	updateGameState();
-	snake[0];
+	std::cout<<"Done updating"<<std::endl;
 }
 
 void updateSnake(){
-	for(int i = snakeLength-1; i > 0; i++){
+	for(int i = snakeLength-1; i > 0; i--){
 		snake[i].x = snake[i-1].x;
 		snake[i].y = snake[i-1].y;
 	}
@@ -158,7 +170,7 @@ void updateGameState(){
 	if(board[snake[0].y*WIDTH+snake[0].x]!='O'){
 		lost = true;
 	}
-	if(board[fruitY*WIDTH+fruitX]!='@'){
+	else if(board[fruitY*WIDTH+fruitX]!='@'){
 		snakeLength++;
 		spawnFruit();
 	}
