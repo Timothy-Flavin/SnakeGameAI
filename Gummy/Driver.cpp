@@ -5,26 +5,32 @@ struct SnakePart {
 	public:
 		int x = 0;
 		int y = 0;
-		int dir = 0;
-		bool active = false;
+		//bool active = false;
 };
+int fruitX = 0;
+int fruitY = 0;
 const int WIDTH = 20;
 const int HEIGHT = 20;
 int board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
+int snakeLength = 1;
+int dir = 0;
+bool lost = false;
 
 
 void init();
 void clearBoard();
 void printBoard();
 void resetSnake();
+void spawnFruit();
+void updateSnake();
+void updateBoard();
+void updateGameState();
 	
 int main(){
 	bool load = true;
 	std::cout<<"load or save? 1, 0: "<<std::endl;
-	std::cin>>load;
-	//first 9 are player 1's
-	//char ** 9 by 28 then 
+	std::cin>>load; 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
 	int layerSizes[4];
@@ -73,6 +79,7 @@ void printBoard(){
 void init(){
 	clearBoard();
 	resetSnake();
+	spawnFruit();
 }
 
 void clearBoard(){
@@ -84,14 +91,75 @@ void clearBoard(){
 }
 
 void resetSnake(){
-	snake[0].active=true;
 	snake[0].x = WIDTH/2;
 	snake[0].y = HEIGHT/2;
-	snake[0].dir = 0;
+	dir = 0;
 	for(int i = 1; i < WIDTH*HEIGHT; i++){
-		snake[i].active=false;
 		snake[i].x = WIDTH/2;
 		snake[i].y = HEIGHT/2;
-		snake[i].dir = 0;
+		dir = 0;
+	}
+}
+
+void spawnFruit(){
+	do{
+		fruitX = rand()%WIDTH;
+		fruitY = rand()%HEIGHT;
+	}while(board[fruitY*WIDTH+fruitX]!=' ');
+	board[fruitY*WIDTH+fruitX]='@';
+}
+
+void update(){
+	updateSnake();
+	updateBoard();
+	updateGameState();
+	snake[0];
+}
+
+void updateSnake(){
+	for(int i = snakeLength-1; i > 0; i++){
+		snake[i].x = snake[i-1].x;
+		snake[i].y = snake[i-1].y;
+	}
+	switch(dir){
+		case 0:
+			snake[0].y--;
+			if(snake[0].y<0)
+				snake[0].y = HEIGHT-1;
+		break;
+		case 1:
+			snake[0].x++;
+			if(snake[0].x>=WIDTH)
+				snake[0].x = 0;
+		break;
+		case 2:
+			snake[0].y++;
+			if(snake[0].y>=HEIGHT)
+				snake[0].y = 0;
+		break;
+		case 3:
+			snake[0].x--;
+			if(snake[0].x<0)
+				snake[0].x = WIDTH-1;
+		break;
+	}
+}
+
+void updateBoard(){
+	clearBoard();
+	board[fruitY*WIDTH + fruitX] = '@';
+	board[snake[0].y*WIDTH + snake[0].x]='O';
+	for(int i = 1; i<snakeLength;i++){
+		board[snake[i].y * WIDTH + snake[i].x] = 'o';
+	}
+}
+
+void updateGameState(){
+	if(board[snake[0].y*WIDTH+snake[0].x]!='O'){
+		lost = true;
+	}
+	if(board[fruitY*WIDTH+fruitX]!='@'){
+		snakeLength++;
+		spawnFruit();
 	}
 }
