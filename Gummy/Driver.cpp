@@ -16,6 +16,7 @@ SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
 int dir = 0;
 bool lost = false;
+bool watch = true;
 
 void update();
 void init();
@@ -26,18 +27,27 @@ void spawnFruit();
 void updateSnake();
 void updateBoard();
 void updateGameState();
+void makeMove(Matrix*, Matrix*, DenseNet*);
+void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream*);
+void setInputs(Matrix*);
 	
 int main(){
 	srand(time(0));
-	
+	/*init();
+	while(!lost){
+		std::cin>>dir;
+		update();
+		printBoard();
+	}*/
 	bool load = true;
 	std::cout<<"load or save? 1, 0: "<<std::endl;
 	std::cin>>load; 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
+	int layer0 = 17;
 	int layerSizes[3];
-	layerSizes[0]=14;
-	layerSizes[1]=50;
+	layerSizes[0]=layer0;
+	layerSizes[1]=100;
 	layerSizes[2]=4;
 	DenseNet* nets;// = new DenseNet();
 	if(load)
@@ -46,30 +56,136 @@ int main(){
 		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 3, layerSizes, true);
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
+	std::cout<<"updating training data"<<std::endl;
 	gummy.setCsvFileName("gameData.csv");
 	gummy.updateTrainingData(true);
+	std::cout<<"done Updating"<<std::endl;
 	std::cin.get();
-	init();
-	while(!lost){
-		update();
-		setInput();
-		choice = nets->feedForward(inputs);
-		int choiceNum = 0;
-		double choiceAmount = 0;
-		for(int i = 0; i < choice.getM(); i++){
-			if(choice.get(i,0)>choiceAmount){
-				choiceAmount = choice.get(i,0);
-				choiceNum = i;
-			}
-		} 
-		nets->backProp(error)
-		printBoard();
-	}
+	Matrix* choice = new Matrix(4,1);
+	Matrix inputs = Matrix(layer0,1);
+	of->open("gameData.csv");
+	of->close();
+	int ga = 0;
+	if(watch) ga = 5;
+	else ga = 500000;
+	playGames(nets, choice, &inputs, ga, of);
+	gummy.updateTrainingData(true);
+	gummy.train(nets);
+	char save = 'n';
+	std::cout<<"save? ";
+	std::cin>>save;
+	if(save == 'y')
+		gummy.saveNet(nets);
+
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
 	std::cin.get();
     return 0;
+}
+
+void setInputs(Matrix* inputs){
+	char space = ' ';
+	for(int i = 0; i < 3; i++){
+		switch(i){
+			case 0:
+				space = ' ';
+			break;
+			case 1:
+				space = 'o';
+			break;
+			case 2:
+				space = '@';
+			break;
+		}
+	    inputs->set(i*4,0,board[((snake[0].y-1)%HEIGHT)*WIDTH+snake[0].x]==space?1:0);
+		inputs->set(i*4+1,0,board[snake[0].y*WIDTH+(snake[0].x+1)%WIDTH]==space?1:0);
+		inputs->set(i*4+2,0,board[((snake[0].y+1)%HEIGHT)*WIDTH+snake[0].x]==space?1:0);
+		inputs->set(i*4+3,0,board[snake[0].y*WIDTH+(snake[0].x-1)%WIDTH]==space?1:0);
+	}
+	inputs->set(12,0,(fruitX-snake[0].x)*1.0/WIDTH);
+	inputs->set(13,0,(fruitY-snake[0].y)*1.0/HEIGHT);
+	inputs->set(14,0,std::pow(1.0*(fruitX-snake[0].x)*(fruitX-snake[0].x)+1.0*(fruitY-snake[0].y)*(fruitY-snake[0].y),0.5));
+	inputs->set(15,0,snake[0].x);
+	inputs->set(16,0,snake[0].y);
+}
+
+void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
+	choice = nets->feedForward(inputs);
+	int choiceNum = 0;
+	double choiceAmount = 0;
+	for(int i = 0; i < choice->getM(); i++){
+		if(choice->get(i,0)>choiceAmount){
+			choiceAmount = choice->get(i,0);
+			choiceNum = i;
+		}
+	} 
+	dir = choiceNum;
+}
+
+void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream* of){
+	of->open ("gameData.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+	(*of)<<"0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
+	int numTurns = 30;
+	double dataToPrint[21*numTurns];
+	bool takenTurn = false;
+	for(int ga = 0; ga < numGames; ga++){
+		//std::cout<<"-----------------------------GAME START----------------------"<<std::endl;
+		int turnNumber = 0;
+		init();
+		lost = false;
+		int oldLength = snakeLength;
+		while(!lost){
+			if(takenTurn){
+				for(int i = 0; i < inputs->getM();i++){
+					dataToPrint[21*turnNumber+i]=inputs->get(i,0);
+				}
+				for(int i = 0; i < choice->getM();i++){
+					if(i == dir)
+						dataToPrint[21*turnNumber+i+inputs->getM()]=1;
+					else
+						dataToPrint[21*turnNumber+i+inputs->getM()]=0;
+				}
+				
+			}
+			setInputs(inputs);
+			if(watch)std::cin.get();
+			/*
+			char cdir = ' ';
+			std::cin>>cdir;
+			if(cdir == 'w') dir = 0;
+			else if(cdir=='d') dir = 1;
+			else if(cdir=='s') dir = 2;
+			else if(cdir=='a') dir = 3;
+			*/
+			if(watch)makeMove(choice, inputs, nets);
+			else dir = rand()%4;
+			update();
+			if(snakeLength > oldLength){
+				//for(int i = 0; i < turnNumber; i++){
+					(*of)<<std::endl;
+					for(int j = 0; j < 21; j++){
+						if(j>0) (*of)<<',';
+						(*of)<<dataToPrint[(turnNumber)*21+j];
+					}
+				//}
+				oldLength = snakeLength;
+				turnNumber = 0;
+			}
+			
+			takenTurn = true;
+			if(watch)printBoard();
+			turnNumber++;
+			if(turnNumber ==numTurns){
+				lost = true;
+			}
+		}
+		//std::cout<<"-----------------------------GAME END----------------------"<<std::endl;
+	
+	}
+	of->close();
+	//fs.open ("test.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+	//std::ofstream out("Info.txt", std::ios_base::app);
 }
 
 void printBoard(){
@@ -104,6 +220,7 @@ void clearBoard(){
 }
 
 void resetSnake(){
+	snakeLength = 3;
 	snake[0].x = WIDTH/2;
 	snake[0].y = HEIGHT/2;
 	dir = 0;
@@ -118,19 +235,19 @@ void spawnFruit(){
 	do{
 		fruitX = rand()%WIDTH;
 		fruitY = rand()%HEIGHT;
-		std::cout<<fruitX<<", "<<fruitY<<std::endl;
+		//std::cout<<fruitX<<", "<<fruitY<<std::endl;
 	}while(board[fruitY*WIDTH+fruitX]!=' ');
 	board[fruitY*WIDTH+fruitX]='@';
 }
 
 void update(){
-	std::cout<<"updating Snake"<<std::endl;
+	//std::cout<<"updating Snake"<<std::endl;
 	updateSnake();
-	std::cout<<"updating Board"<<std::endl;
+	//std::cout<<"updating Board"<<std::endl;
 	updateBoard();
-	std::cout<<"updating GameState"<<std::endl;
+	//std::cout<<"updating GameState"<<std::endl;
 	updateGameState();
-	std::cout<<"Done updating"<<std::endl;
+	//std::cout<<"Done updating"<<std::endl;
 }
 
 void updateSnake(){
