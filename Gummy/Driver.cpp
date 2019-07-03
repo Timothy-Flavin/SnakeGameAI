@@ -29,37 +29,42 @@ void updateGameState();
 	
 int main(){
 	srand(time(0));
-	init();
-	while(!lost){
-		std::cin>>dir;
-		//dir = rand()%3;
-		update();
-		printBoard();
-	}
+	
 	bool load = true;
 	std::cout<<"load or save? 1, 0: "<<std::endl;
 	std::cin>>load; 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
-	int layerSizes[4];
-	layerSizes[0]=27;
-	layerSizes[1]=243;
-	layerSizes[2]=9;
-	int numNets = 1;
-	
-	DenseNet** nets = new DenseNet*[numNets];
-	for(int i = 0; i < numNets; i++){
-		if(load)
-			nets[i]=gummy.loadNet("snakeNet.csv");
-		else if(!load)
-			nets[i]=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 3, layerSizes, true);
-	}
+	int layerSizes[3];
+	layerSizes[0]=14;
+	layerSizes[1]=50;
+	layerSizes[2]=4;
+	DenseNet* nets;// = new DenseNet();
+	if(load)
+		nets=gummy.loadNet("snakeNet.csv");
+	else if(!load)
+		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 3, layerSizes, true);
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
 	gummy.setCsvFileName("gameData.csv");
 	gummy.updateTrainingData(true);
 	std::cin.get();
-	
+	init();
+	while(!lost){
+		update();
+		setInput();
+		choice = nets->feedForward(inputs);
+		int choiceNum = 0;
+		double choiceAmount = 0;
+		for(int i = 0; i < choice.getM(); i++){
+			if(choice.get(i,0)>choiceAmount){
+				choiceAmount = choice.get(i,0);
+				choiceNum = i;
+			}
+		} 
+		nets->backProp(error)
+		printBoard();
+	}
 	std::cin.clear();
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	std::cout<<"done and authored by Timothy-Flavin"<<std::endl;
