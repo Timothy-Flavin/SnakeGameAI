@@ -63,10 +63,15 @@ int main(){
 	std::cin.get();
 	Matrix* choice = new Matrix(4,1);
 	Matrix inputs = Matrix(layer0,1);
+
+
+	//gummy.train(nets);
+
+
 	of->open("gameData.csv");
 	of->close();
 	int ga = 0;
-	if(watch) ga = 5;
+	if(watch) ga = 3;
 	else ga = 500000;
 	playGames(nets, choice, &inputs, ga, of);
 	gummy.updateTrainingData(true);
@@ -158,17 +163,19 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			else if(cdir=='s') dir = 2;
 			else if(cdir=='a') dir = 3;
 			*/
+			
 			if(watch)makeMove(choice, inputs, nets);
 			else dir = rand()%4;
+			
 			update();
 			if(snakeLength > oldLength){
-				//for(int i = 0; i < turnNumber; i++){
+				for(int i = 0; i < turnNumber; i++){
 					(*of)<<std::endl;
 					for(int j = 0; j < 21; j++){
 						if(j>0) (*of)<<',';
-						(*of)<<dataToPrint[(turnNumber)*21+j];
+						(*of)<<dataToPrint[i*21+j];
 					}
-				//}
+				}
 				oldLength = snakeLength;
 				turnNumber = 0;
 			}
@@ -221,8 +228,8 @@ void clearBoard(){
 
 void resetSnake(){
 	snakeLength = 3;
-	snake[0].x = WIDTH/2;
-	snake[0].y = HEIGHT/2;
+	snake[0].x = rand()%WIDTH;
+	snake[0].y = rand()%HEIGHT;
 	dir = 0;
 	for(int i = 1; i < WIDTH*HEIGHT; i++){
 		snake[i].x = WIDTH/2;
@@ -243,11 +250,12 @@ void spawnFruit(){
 void update(){
 	//std::cout<<"updating Snake"<<std::endl;
 	updateSnake();
-	//std::cout<<"updating Board"<<std::endl;
+		//std::cout<<"updating Board"<<std::endl;
 	updateBoard();
-	//std::cout<<"updating GameState"<<std::endl;
+		//std::cout<<"updating GameState"<<std::endl;
 	updateGameState();
-	//std::cout<<"Done updating"<<std::endl;
+		//std::cout<<"Done updating"<<std::endl;
+	
 }
 
 void updateSnake(){
@@ -258,23 +266,31 @@ void updateSnake(){
 	switch(dir){
 		case 0:
 			snake[0].y--;
-			if(snake[0].y<0)
-				snake[0].y = HEIGHT-1;
+			if(snake[0].y<0){
+				lost = true;
+				snake[0].y = 0;//HEIGHT-1;
+			}
 		break;
 		case 1:
 			snake[0].x++;
-			if(snake[0].x>=WIDTH)
-				snake[0].x = 0;
+			if(snake[0].x>=WIDTH){
+				lost = true;
+				snake[0].x = WIDTH-1;//0;
+			}
 		break;
 		case 2:
 			snake[0].y++;
-			if(snake[0].y>=HEIGHT)
-				snake[0].y = 0;
+			if(snake[0].y>=HEIGHT){
+				lost = true;
+				snake[0].y = HEIGHT-1;//0;
+			}
 		break;
 		case 3:
 			snake[0].x--;
-			if(snake[0].x<0)
-				snake[0].x = WIDTH-1;
+			if(snake[0].x<0){
+				lost = true;
+				snake[0].x = 0;//WIDTH-1;
+			}
 		break;
 	}
 }
