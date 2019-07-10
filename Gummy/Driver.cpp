@@ -68,11 +68,14 @@ int main(){
 	//gummy.train(nets);
 
 
-	of->open("gameData.csv");
-	of->close();
+	//of->open("gameData.csv");
+	//of->close();
 	int ga = 0;
-	if(watch) ga = 3;
+	if(watch) ga = 5;
 	else ga = 500000;
+	gummy.updateTrainingData(true);
+	gummy.train(nets);
+	gummy.saveNet(nets);
 	playGames(nets, choice, &inputs, ga, of);
 	gummy.updateTrainingData(true);
 	gummy.train(nets);
@@ -110,7 +113,7 @@ void setInputs(Matrix* inputs){
 	}
 	inputs->set(12,0,(fruitX-snake[0].x)*1.0/WIDTH);
 	inputs->set(13,0,(fruitY-snake[0].y)*1.0/HEIGHT);
-	inputs->set(14,0,std::pow(1.0*(fruitX-snake[0].x)*(fruitX-snake[0].x)+1.0*(fruitY-snake[0].y)*(fruitY-snake[0].y),0.5));
+	inputs->set(14,0,snakeLength);
 	inputs->set(15,0,snake[0].x);
 	inputs->set(16,0,snake[0].y);
 }
@@ -131,7 +134,7 @@ void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
 void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream* of){
 	of->open ("gameData.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 	(*of)<<"0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
-	int numTurns = 30;
+	int numTurns = 40;
 	double dataToPrint[21*numTurns];
 	bool takenTurn = false;
 	for(int ga = 0; ga < numGames; ga++){
@@ -154,6 +157,7 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 				
 			}
 			setInputs(inputs);
+			//inputs->print();
 			if(watch)std::cin.get();
 			/*
 			char cdir = ' ';
@@ -232,8 +236,8 @@ void resetSnake(){
 	snake[0].y = rand()%HEIGHT;
 	dir = 0;
 	for(int i = 1; i < WIDTH*HEIGHT; i++){
-		snake[i].x = WIDTH/2;
-		snake[i].y = HEIGHT/2;
+		snake[i].x = snake[0].x;
+		snake[i].y = snake[0].y;
 		//dir = 0;
 	}
 }
