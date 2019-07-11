@@ -9,8 +9,8 @@ struct SnakePart {
 };
 int fruitX = 0;
 int fruitY = 0;
-const int WIDTH = 10;
-const int HEIGHT = 10;
+const int WIDTH = 15;
+const int HEIGHT = 15;
 char board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
@@ -42,7 +42,7 @@ int main(){
 	int layer0 = 17;
 	int layerSizes[3];
 	layerSizes[0]=layer0;
-	layerSizes[1]=100;
+	layerSizes[1]=200;
 	layerSizes[2]=4;
 	DenseNet* nets;
 	if(load)
@@ -174,7 +174,7 @@ void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
 
 void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream* of, int playerType){
 	of->open ("gameData.csv", std::fstream::in | std::fstream::out | std::fstream::app);
-	int numTurns = abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
+	int numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 	double dataToPrint[21*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
 	bool takenTurn = false;
 	for(int ga = 0; ga < numGames; ga++){
@@ -187,7 +187,7 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 		if(printGames)printBoard();
 		lost = false;
 		int oldLength = snakeLength;
-		numTurns = abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
+		numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 		while(!lost){
 			setInputs(inputs);
 			if(printGames || playerType == 0)
@@ -246,7 +246,7 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 				}
 				oldLength = snakeLength;
 				turnNumber = -1;
-				numTurns = abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
+				numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 			}
 			
 			
