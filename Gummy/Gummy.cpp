@@ -183,20 +183,22 @@ void Gummy::train(DenseNet* net) {
 		//std::cout<<"back propped"<<std::endl;
 		if (i%percentNum == 0) {
 			std::cout << "percent done: " << i / percentNum<<"%\n";
-			/*
+			
+			int randomEntry = rand()%trainingData->numLines;
 			double error = 0;
-			for(int rowNum = 0; rowNum < trainingData->numLines; rowNum++){
+			for(int rowNum = 0; rowNum < 10000; rowNum++){
+				randomEntry = rand()%trainingData->numLines;
 				for(int j = 0; j < numIn; j++){
-					inputMatrix->set(j,0,trainingData->numData[rowNum][j]);
+					inputMatrix->set(j,0,trainingData->numData[randomEntry][j]);
 				}
 				for(int j = 0; j < numOut; j++){
-					outputMatrix->set(j,0,trainingData->numData[rowNum][j+numIn]);
+					outputMatrix->set(j,0,trainingData->numData[randomEntry][j+numIn]);
 				}
 				net->feedForward(inputMatrix);
 				error+=net->calcError(outputMatrix);
 			}
-			std::cout<<"error: "<<error/trainingData->numLines<<std::endl;
-			*/
+			std::cout<<"error: "<<error/10000<<" batch size = 10000"<<std::endl;
+			
 		}
 	}
 	for(int i = 0; i < 10; i++){

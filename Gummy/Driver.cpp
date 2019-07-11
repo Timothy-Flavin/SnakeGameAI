@@ -9,8 +9,8 @@ struct SnakePart {
 };
 int fruitX = 0;
 int fruitY = 0;
-const int WIDTH = 15;
-const int HEIGHT = 15;
+const int WIDTH = 10;
+const int HEIGHT = 10;
 char board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
@@ -39,10 +39,10 @@ int main(){
 	std::cin>>load; 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
-	int layer0 = 17;
+	int layer0 = WIDTH*HEIGHT+4;
 	int layerSizes[3];
 	layerSizes[0]=layer0;
-	layerSizes[1]=200;
+	layerSizes[1]=100;
 	layerSizes[2]=4;
 	DenseNet* nets;
 	if(load)
@@ -107,53 +107,43 @@ int main(){
 }
 
 void setInputs(Matrix* inputs){
-	char space = ' ';
-	for(int i = 0; i < 3; i++){
-		switch(i){
-			case 0:
-				space = ' ';
-			break;
-			case 1:
-				space = 'o';
-			break;
-			case 2:
-				space = '@';
-			break;
+	int spaceValue;
+	for(int y = 0; y < HEIGHT; y++){
+		for(int x = 0; x < WIDTH; x++){
+			switch(board[y*WIDTH+x]){
+				case ' ':
+					spaceValue = 0;
+				break;
+				case 'O':
+					spaceValue = 0;
+				break;
+				case 'o':
+					spaceValue = -1;
+				break;
+				case '@':
+					spaceValue = 1;
+				break;
+			}
+			inputs->set(y*WIDTH+x,0, spaceValue);
+			#ifndef debugInputs
+			std::cout<<"space '"<<y*WIDTH+x<<"', value: "<<spaceValue<<std::endl;
+			#endif
 		}
-	    inputs->set(i*4,0, snake[0].y-1>-1 && board[(snake[0].y-1)*WIDTH+snake[0].x]==space?1:0);
-		#ifndef debugInputs
-		std::cout<<"space '"<<space<<"', value: "<<inputs->get(i*4,0)<<std::endl;
-		#endif
-		inputs->set(i*4+1,0, snake[0].x+1<WIDTH && board[snake[0].y*WIDTH+(snake[0].x+1)]==space?1:0);
-		#ifndef debugInputs
-		std::cout<<"space '"<<space<<"', value: "<<inputs->get(i*4+1,0)<<std::endl;
-		#endif
-		inputs->set(i*4+2,0, snake[0].y+1<HEIGHT && board[(snake[0].y+1)*WIDTH+snake[0].x]==space?1:0);
-		#ifndef debugInputs
-		std::cout<<"space '"<<space<<"', value: "<<inputs->get(i*4+2,0)<<std::endl;
-		#endif
-		inputs->set(i*4+3,0, snake[0].x-1>-1 && board[snake[0].y*WIDTH+(snake[0].x-1)]==space?1:0);
-		#ifndef debugInputs
-		std::cout<<"space '"<<space<<"', value: "<<inputs->get(i*4+3,0)<<std::endl<<std::endl;
-		#endif
 	}
-	inputs->set(12,0,(fruitX-snake[0].x)*1.0/WIDTH);
+	
+	inputs->set(WIDTH*HEIGHT,0,fruitX*1.0/WIDTH);
 	#ifndef debugInputs
 	std::cout<<"(fruitX-snakeX)/Width = "<<inputs->get(12,0)<<std::endl;
 	#endif
-	inputs->set(13,0,(fruitY-snake[0].y)*1.0/HEIGHT);
+	inputs->set(WIDTH*HEIGHT+1,0,fruitY*1.0/HEIGHT);
 	#ifndef debugInputs
 	std::cout<<"(fruitY-snakeY)/Height = "<<inputs->get(13,0)<<std::endl;
 	#endif
-	inputs->set(14,0,snakeLength);
-	#ifndef debugInputs
-	std::cout<<"Snake Length = "<<inputs->get(14,0)<<std::endl;
-	#endif
-	inputs->set(15,0,snake[0].x);
+	inputs->set(WIDTH*HEIGHT+2,0,snake[0].x*1.0/WIDTH);
 	#ifndef debugInputs
 	std::cout<<"Snake X = "<<inputs->get(15,0)<<std::endl;
 	#endif
-	inputs->set(16,0,snake[0].y);
+	inputs->set(WIDTH*HEIGHT+3,0,snake[0].y*1.0/HEIGHT);
 	#ifndef debugInputs
 	std::cout<<"Snake Y = "<<inputs->get(16,0)<<std::endl;
 	#endif
@@ -175,7 +165,7 @@ void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
 void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream* of, int playerType){
 	of->open ("gameData.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 	int numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
-	double dataToPrint[21*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
+	double dataToPrint[104*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
 	bool takenTurn = false;
 	for(int ga = 0; ga < numGames; ga++){
 		if(ga%100==0)
@@ -190,6 +180,7 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 		numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 		while(!lost){
 			setInputs(inputs);
+			//std::cout<<"set inputs turn:"<<turnNumber<<std::endl;
 			if(printGames || playerType == 0)
 				std::cin.get();
 			if(playerType == 0){
@@ -206,49 +197,58 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			} else{
 				std::cout<<"invalid player type"<<std::endl;
 			}
+			//std::cout<<"made move turn:"<<turnNumber<<std::endl;
 			update();
+			//std::cout<<"updated turn:"<<turnNumber<<std::endl;
 
 			if(printGames)printBoard();
-			turnNumber++;
-			//std::cout<<"turn number after printing board: "<<turnNumber<<std::endl;
-			if(turnNumber ==numTurns){
-				lost = true;
-				std::cout<<"lost because of turns"<<std::endl;
-			}
 
-			//std::cout<<"turn number before setting data: "<<turnNumber<<std::endl;
+			//std::cout<<"printed board turn:"<<turnNumber<<std::endl;
+
+			
 			if(!lost){
 				//std::cout<<"recording data to dataToPrint, turnNumber: "<<turnNumber<<std::endl;
 				for(int i = 0; i < inputs->getM();i++){
-					dataToPrint[21*(turnNumber)+i]=inputs->get(i,0);
+					dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i]=inputs->get(i,0);
 				}
 				for(int i = 0; i < choice->getM();i++){
-					if(i == dir)
-						dataToPrint[21*(turnNumber)+i+inputs->getM()]=1;
-					else
-						dataToPrint[21*(turnNumber)+i+inputs->getM()]=0;
+					if(i == dir){
+						dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=1;
+						//std::cout<<i+1<<"/"<<choice->getM()<<" i=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;
+					}
+					else{
+						dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=0;
+						//std::cout<<i+1<<"/"<<choice->getM()<<" i!=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;					
+					}
 				}
 				
 			}
-
+			//std::cout<<"recorded data, turn:"<<turnNumber<<std::endl;
+			turnNumber++;
+			//std::cout<<"turn number after printing board: "<<turnNumber<<std::endl;
+			if(turnNumber==numTurns){
+				lost = true;
+				std::cout<<"lost because of turns"<<std::endl;
+			}
+			//std::cout<<"checked turnNumber==numTurns, turn:"<<turnNumber<<std::endl;
 			if(snakeLength > oldLength){
 				//std::cout<<"turn number before printing data to file: "<<turnNumber<<std::endl;
-				for(int i = 0; i <= turnNumber; i++){
+				for(int i = 0; i < turnNumber; i++){
 					if(i == 0 && continueFile)
 						(*of)<<std::endl;
 					else if(i!=0)
 						(*of)<<std::endl;
-					for(int j = 0; j < 21; j++){
-						//std::cout<<"data: "<<dataToPrint[i*21+j]<<", at: "<<i<<"*"<<21<<"+"<<j<<"  =  "<<i*21+j<<std::endl;
+					for(int j = 0; j < (inputs->getM()+choice->getM()); j++){
+						//std::cout<<"data: "<<dataToPrint[i*(inputs->getM()+choice->getM())+j]<<", at: "<<i<<"*"<<inputs->getM()+choice->getM()<<"+"<<j<<", or  "<<i*(inputs->getM()+choice->getM())+j<<std::endl;
 						if(j>0) (*of)<<',';
-						(*of)<<dataToPrint[i*21+j];
+						(*of)<<dataToPrint[i*(inputs->getM()+choice->getM())+j];
 					}
 				}
 				oldLength = snakeLength;
-				turnNumber = -1;
+				turnNumber = 0;
 				numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 			}
-			
+			//std::cout<<"printed turn, turn:"<<turnNumber<<std::endl;
 			
 		}
 		//std::cout<<"-----------------------------GAME END----------------------"<<std::endl;
@@ -272,6 +272,7 @@ void printBoard(){
 	for(int w = 0; w < WIDTH+2; w++){
 			std::cout<<'-';
 	}
+	std::cout<<std::endl;
 }
 
 void init(){
