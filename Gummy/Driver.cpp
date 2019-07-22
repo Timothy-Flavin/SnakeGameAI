@@ -9,8 +9,8 @@ struct SnakePart {
 };
 int fruitX = 0;
 int fruitY = 0;
-const int WIDTH = 10;
-const int HEIGHT = 10;
+const int WIDTH = 15;
+const int HEIGHT = 15;
 char board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
@@ -18,6 +18,10 @@ int dir = 0;
 bool lost = false;
 bool printGames = false;
 bool continueFile = true;
+double reward = 0;
+int distance = 100;
+int snakeVisionY=5;
+int snakeVisionX=5;
 
 void update();
 void init();
@@ -39,16 +43,17 @@ int main(){
 	std::cin>>load; 
     Gummy gummy = Gummy();
     std::cout<<"Gummy init done";
-	int layer0 = WIDTH*HEIGHT+4;
-	int layerSizes[3];
+	int layer0 = (snakeVisionX*2+1)*(snakeVisionY*2+1)+2;
+	int layerSizes[4];
 	layerSizes[0]=layer0;
-	layerSizes[1]=100;
-	layerSizes[2]=4;
+	layerSizes[1]=50;
+	layerSizes[2]=20;
+	layerSizes[3]=4;
 	DenseNet* nets;
 	if(load)
 		nets=gummy.loadNet("snakeNet.csv");
 	else if(!load)
-		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 3, layerSizes, true);
+		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 4, layerSizes, true);
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
 	std::cout<<"updating training data"<<std::endl;
@@ -108,45 +113,50 @@ int main(){
 
 void setInputs(Matrix* inputs){
 	int spaceValue;
-	for(int y = 0; y < HEIGHT; y++){
-		for(int x = 0; x < WIDTH; x++){
-			switch(board[y*WIDTH+x]){
-				case ' ':
-					spaceValue = 0;
-				break;
-				case 'O':
-					spaceValue = 0;
-				break;
-				case 'o':
-					spaceValue = -1;
-				break;
-				case '@':
-					spaceValue = 1;
-				break;
+	std::cout<<"Setting inputs"<<std::endl;
+	for(int y = snake[0].y-snakeVisionY; y <= snake[0].y+snakeVisionY; y++){
+		for(int x = snake[0].x-snakeVisionX; x <= snake[0].x+snakeVisionX; x++){
+			if(y>-1&&y<HEIGHT && x>-1&&x<WIDTH){
+				//std::cout<<"y: "<<y<<", x: "<<x<<std::endl;
+				switch(board[y*WIDTH+x]){
+					case ' ':
+						spaceValue = 0;
+					break;
+					case 'O':
+						spaceValue = 1;
+					break;
+					case 'o':
+						spaceValue = -1;
+					break;
+					case '@':
+						spaceValue = 1;
+					break;
+				}
 			}
-			inputs->set(y*WIDTH+x,0, spaceValue);
+			else{
+				spaceValue=-1;
+			}
+			//std::cout<<"pos: "<<(y-(snake[0].y-snakeVisionY))*(snakeVisionX*2+1)+(x-(snake[0].x-snakeVisionX))<<", space: "<<spaceValue<<',';
+			if(spaceValue==0||spaceValue==1)
+				std::cout<<" ";
+			std::cout<<spaceValue<<",";
+			inputs->set((y-(snake[0].y-snakeVisionY))*(snakeVisionX*2+1)+x-(snake[0].x-snakeVisionX),0, spaceValue);
 			#ifndef debugInputs
 			std::cout<<"space '"<<y*WIDTH+x<<"', value: "<<spaceValue<<std::endl;
 			#endif
 		}
+		std::cout<<std::endl;
 	}
 	
-	inputs->set(WIDTH*HEIGHT,0,fruitX*1.0/WIDTH);
+	inputs->set((snakeVisionY*2+1)*(snakeVisionX*2+1),0,(fruitX-snake[0].x)*1.0/WIDTH);
 	#ifndef debugInputs
 	std::cout<<"(fruitX-snakeX)/Width = "<<inputs->get(12,0)<<std::endl;
 	#endif
-	inputs->set(WIDTH*HEIGHT+1,0,fruitY*1.0/HEIGHT);
+	inputs->set((snakeVisionY*2+1)*(snakeVisionX*2+1)+1,0,(fruitY-snake[0].y)*1.0/HEIGHT);
 	#ifndef debugInputs
 	std::cout<<"(fruitY-snakeY)/Height = "<<inputs->get(13,0)<<std::endl;
 	#endif
-	inputs->set(WIDTH*HEIGHT+2,0,snake[0].x*1.0/WIDTH);
-	#ifndef debugInputs
-	std::cout<<"Snake X = "<<inputs->get(15,0)<<std::endl;
-	#endif
-	inputs->set(WIDTH*HEIGHT+3,0,snake[0].y*1.0/HEIGHT);
-	#ifndef debugInputs
-	std::cout<<"Snake Y = "<<inputs->get(16,0)<<std::endl;
-	#endif
+	
 }
 
 void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
@@ -179,8 +189,8 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 		int oldLength = snakeLength;
 		numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 		while(!lost){
+			//setting data inputs and getting dir
 			setInputs(inputs);
-			//std::cout<<"set inputs turn:"<<turnNumber<<std::endl;
 			if(printGames || playerType == 0)
 				std::cin.get();
 			if(playerType == 0){
@@ -197,41 +207,36 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			} else{
 				std::cout<<"invalid player type"<<std::endl;
 			}
-			//std::cout<<"made move turn:"<<turnNumber<<std::endl;
+			
 			update();
-			//std::cout<<"updated turn:"<<turnNumber<<std::endl;
-
+			if(snakeLength>oldLength){
+				spawnFruit();
+			}
 			if(printGames)printBoard();
 
-			//std::cout<<"printed board turn:"<<turnNumber<<std::endl;
 
-			
-			if(!lost){
-				//std::cout<<"recording data to dataToPrint, turnNumber: "<<turnNumber<<std::endl;
-				for(int i = 0; i < inputs->getM();i++){
-					dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i]=inputs->get(i,0);
-				}
-				for(int i = 0; i < choice->getM();i++){
-					if(i == dir){
-						dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=1;
-						//std::cout<<i+1<<"/"<<choice->getM()<<" i=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;
-					}
-					else{
-						dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=0;
-						//std::cout<<i+1<<"/"<<choice->getM()<<" i!=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;					
-					}
-				}
-				
-			}
-			//std::cout<<"recorded data, turn:"<<turnNumber<<std::endl;
-			turnNumber++;
-			//std::cout<<"turn number after printing board: "<<turnNumber<<std::endl;
-			if(turnNumber==numTurns){
+			if(turnNumber==numTurns-1){
 				lost = true;
 				std::cout<<"lost because of turns"<<std::endl;
+				reward=0;
 			}
-			//std::cout<<"checked turnNumber==numTurns, turn:"<<turnNumber<<std::endl;
-			if(snakeLength > oldLength){
+			//Setting Data To print each turn
+			for(int i = 0; i < inputs->getM();i++){
+				dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i]=inputs->get(i,0);
+			}
+			for(int i = 0; i < choice->getM();i++){
+				if(i == dir){
+					dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=reward;
+					//std::cout<<i+1<<"/"<<choice->getM()<<" i=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;
+				}
+				else{
+					dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]=0;
+					//std::cout<<i+1<<"/"<<choice->getM()<<" i!=dir, setting data at: "<<((inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM())<<", to: "<<dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i+inputs->getM()]<<std::endl;					
+				}
+			}
+			turnNumber++;
+			//print data
+			if(snakeLength > oldLength || lost){
 				//std::cout<<"turn number before printing data to file: "<<turnNumber<<std::endl;
 				for(int i = 0; i < turnNumber; i++){
 					if(i == 0 && continueFile)
@@ -312,14 +317,9 @@ void spawnFruit(){
 }
 
 void update(){
-	//std::cout<<"updating Snake"<<std::endl;
 	updateSnake();
-		//std::cout<<"updating Board"<<std::endl;
-	updateBoard();
-		//std::cout<<"updating GameState"<<std::endl;
 	updateGameState();
-		//std::cout<<"Done updating"<<std::endl;
-	
+	updateBoard();
 }
 
 void updateSnake(){
@@ -327,34 +327,19 @@ void updateSnake(){
 		snake[i].x = snake[i-1].x;
 		snake[i].y = snake[i-1].y;
 	}
+	distance = abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY);
 	switch(dir){
 		case 0:
-			snake[0].y--;
-			if(snake[0].y<0){
-				lost = true;
-				snake[0].y = 0;//HEIGHT-1;
-			}
+			snake[0].y--;			
 		break;
 		case 1:
-			snake[0].x++;
-			if(snake[0].x>=WIDTH){
-				lost = true;
-				snake[0].x = WIDTH-1;//0;
-			}
+			snake[0].x++;			
 		break;
 		case 2:
-			snake[0].y++;
-			if(snake[0].y>=HEIGHT){
-				lost = true;
-				snake[0].y = HEIGHT-1;//0;
-			}
+			snake[0].y++;			
 		break;
 		case 3:
 			snake[0].x--;
-			if(snake[0].x<0){
-				lost = true;
-				snake[0].x = 0;//WIDTH-1;
-			}
 		break;
 	}
 }
@@ -369,11 +354,20 @@ void updateBoard(){
 }
 
 void updateGameState(){
-	if(board[snake[0].y*WIDTH+snake[0].x]!='O'){
-		lost = true;
+	if(snake[0].y<0||snake[0].y>=HEIGHT||snake[0].x<0||snake[0].x>=WIDTH||board[snake[0].y*WIDTH+snake[0].x]=='o'){
+		lost=true;
+		reward=-1;
 	}
-	else if(board[fruitY*WIDTH+fruitX]!='@'){
+	else if(fruitX==snake[0].x&&fruitY==snake[0].y){
+		snake[snakeLength].x=snake[snakeLength-1].x;
+		snake[snakeLength].y=snake[snakeLength-1].y;
 		snakeLength++;
-		spawnFruit();
+		reward=2;
+	} 
+	else if(distance>abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)){
+		reward=1;
+	}
+	else{
+		reward=0;
 	}
 }
