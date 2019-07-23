@@ -17,7 +17,7 @@ Matrix::Matrix(int n1, int n2) {
 	for (int i = 0; i < m; i++) {
 		matrix[i] = new double[n];
 		for (int j = 0; j < n; j++)
-			matrix[i][j] = NULL;
+			matrix[i][j] = 0.0;
 	}
 }
 void Matrix::construct(int n1, int n2) {
@@ -27,7 +27,7 @@ void Matrix::construct(int n1, int n2) {
 	for (int i = 0; i < m; i++) {
 		matrix[i] = new double[n];
 		for (int j = 0; j < n; j++)
-			matrix[i][j] = 0.01;
+			matrix[i][j] = 0.0;
 	}
 }
 void Matrix::fillRandInt(int min, int max) {
