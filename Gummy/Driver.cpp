@@ -9,8 +9,8 @@ struct SnakePart {
 };
 int fruitX = 0;
 int fruitY = 0;
-const int WIDTH = 15;
-const int HEIGHT = 15;
+const int WIDTH = 20;
+const int HEIGHT = 20;
 char board[WIDTH*HEIGHT];
 SnakePart snake[WIDTH*HEIGHT];
 int snakeLength = 1;
@@ -113,7 +113,7 @@ int main(){
 
 void setInputs(Matrix* inputs){
 	int spaceValue;
-	std::cout<<"Setting inputs"<<std::endl;
+	//std::cout<<"Setting inputs"<<std::endl;
 	for(int y = snake[0].y-snakeVisionY; y <= snake[0].y+snakeVisionY; y++){
 		for(int x = snake[0].x-snakeVisionX; x <= snake[0].x+snakeVisionX; x++){
 			if(y>-1&&y<HEIGHT && x>-1&&x<WIDTH){
@@ -137,15 +137,17 @@ void setInputs(Matrix* inputs){
 				spaceValue=-1;
 			}
 			//std::cout<<"pos: "<<(y-(snake[0].y-snakeVisionY))*(snakeVisionX*2+1)+(x-(snake[0].x-snakeVisionX))<<", space: "<<spaceValue<<',';
+			#ifndef debugInputs
 			if(spaceValue==0||spaceValue==1)
 				std::cout<<" ";
 			std::cout<<spaceValue<<",";
+			#endif
 			inputs->set((y-(snake[0].y-snakeVisionY))*(snakeVisionX*2+1)+x-(snake[0].x-snakeVisionX),0, spaceValue);
 			#ifndef debugInputs
 			std::cout<<"space '"<<y*WIDTH+x<<"', value: "<<spaceValue<<std::endl;
 			#endif
 		}
-		std::cout<<std::endl;
+		//std::cout<<std::endl;
 	}
 	
 	inputs->set((snakeVisionY*2+1)*(snakeVisionX*2+1),0,(fruitX-snake[0].x)*1.0/WIDTH);
@@ -217,7 +219,7 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 
 			if(turnNumber==numTurns-1){
 				lost = true;
-				std::cout<<"lost because of turns"<<std::endl;
+				//std::cout<<"lost because of turns"<<std::endl;
 				reward=0;
 			}
 			//Setting Data To print each turn
