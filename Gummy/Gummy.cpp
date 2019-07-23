@@ -23,7 +23,7 @@ csv* Gummy::readCSV(char* fileName) {
 	std::ifstream infile;
 	std::cout<<"file being read "<<fileName<<std::endl;
 	infile.open(fileName);
-	//std::cout<<"opened file"<<std::endl;
+	std::cout<<"opened file"<<std::endl;
 	int curLine = 0;
 	std::string dead = "";
 	while (std::getline(infile,dead)) {
@@ -44,7 +44,7 @@ csv* Gummy::readCSV(char* fileName) {
 	csv* file = new csv;
 	file->name = fileName;
 	file->numLines = curLine;
-	//std::cout<<"made num lines"<<std::endl;
+	//std::cout<<"made num lines"<<file->numLines<<std::endl;
 	file->data = new std::string[curLine];
 	curLine = 0;
 	//std::cout<<"made empty file"<<std::endl;
@@ -52,7 +52,7 @@ csv* Gummy::readCSV(char* fileName) {
 		//std::cout << file->data[curLine] << std::endl;
 		curLine++;
 	}
-	std::cout<<"filled file"<<std::endl;
+	//std::cout<<"filled file"<<std::endl;
 	int numVals = 1;
 	for (int i = 0; i < file->data[0].size(); i++) {
 		if (file->data[0].at(i) == ',') {
@@ -183,20 +183,22 @@ void Gummy::train(DenseNet* net) {
 		//std::cout<<"back propped"<<std::endl;
 		if (i%percentNum == 0) {
 			std::cout << "percent done: " << i / percentNum<<"%\n";
-			/*
+			
+			int randomEntry = rand()%trainingData->numLines;
 			double error = 0;
-			for(int rowNum = 0; rowNum < trainingData->numLines; rowNum++){
+			for(int rowNum = 0; rowNum < 10000; rowNum++){
+				randomEntry = rand()%trainingData->numLines;
 				for(int j = 0; j < numIn; j++){
-					inputMatrix->set(j,0,trainingData->numData[rowNum][j]);
+					inputMatrix->set(j,0,trainingData->numData[randomEntry][j]);
 				}
 				for(int j = 0; j < numOut; j++){
-					outputMatrix->set(j,0,trainingData->numData[rowNum][j+numIn]);
+					outputMatrix->set(j,0,trainingData->numData[randomEntry][j+numIn]);
 				}
 				net->feedForward(inputMatrix);
 				error+=net->calcError(outputMatrix);
 			}
-			std::cout<<"error: "<<error/trainingData->numLines<<std::endl;
-			*/
+			std::cout<<"error: "<<error/10000<<" batch size = 10000"<<std::endl;
+			
 		}
 	}
 	for(int i = 0; i < 10; i++){
