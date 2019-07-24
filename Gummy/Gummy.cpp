@@ -21,9 +21,9 @@ Gummy::Gummy(){
 
 csv* Gummy::readCSV(char* fileName) {
 	std::ifstream infile;
-	std::cout<<"file being read "<<fileName<<std::endl;
+	std::cout<<"file being read... "<<fileName<<std::endl;
 	infile.open(fileName);
-	std::cout<<"opened file"<<std::endl;
+	std::cout<<"opened file..."<<std::endl;
 	int curLine = 0;
 	std::string dead = "";
 	while (std::getline(infile,dead)) {
@@ -71,7 +71,7 @@ void Gummy::updateTrainingData(bool numbersOnly) {
 		csvToDouble(trainingData);
 }
 void Gummy::csvToDouble(csv* file) {
-	std::cout << "------------------------CSV TO DOUBLE---------------\n";
+	std::cout << "converting file from string to doubles...\n";
 	file->numData = new double*[file->numLines];
 	for (int i = 0; i < file->numLines; i++) {
 		//std::cout << "starting thing\n";
