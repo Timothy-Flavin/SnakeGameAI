@@ -57,11 +57,6 @@ int main(){
 		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 4, layerSizes, true);
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
-	//std::cout<<"updating training data"<<std::endl;
-	//gummy.setCsvFileName("gameData.csv");
-	//gummy.updateTrainingData(true);
-	//std::cout<<"done Updating"<<std::endl;
-	//std::cin.get();
 	Matrix* choice = new Matrix(4,1);
 	Matrix inputs = Matrix(layer0,1);
 
