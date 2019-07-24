@@ -76,10 +76,10 @@ int main(){
 	if(yesNo == 'y'){
 		continueFile=false;
 		of->open("gameData.csv");
-		for(int i = 0; i < layer0;i++){
-			(*of)<<"0,";
-		}
-		(*of)<<"0";
+		//for(int i = 0; i < layer0;i++){
+		//	(*of)<<"0,";
+		//}
+		//(*of)<<"0";
 		of->close();
 	} else{
 		continueFile = true;
@@ -145,19 +145,21 @@ void setInputs(Matrix* inputs){
 			#endif
 			inputs->set((y-(snake[0].y-snakeVisionY))*(snakeVisionX*2+1)+x-(snake[0].x-snakeVisionX),0, spaceValue);
 			#ifndef debugInputs
-			std::cout<<"space '"<<y*WIDTH+x<<"', value: "<<spaceValue<<std::endl;
+			//std::cout<<"space '"<<y*WIDTH+x<<"', value: "<<spaceValue<<std::endl;
 			#endif
 		}
-		//std::cout<<std::endl;
+		#ifndef debugInputs
+		std::cout<<std::endl;
+		#endif
 	}
 	
 	inputs->set((snakeVisionY*2+1)*(snakeVisionX*2+1),0,(fruitX-snake[0].x)*1.0/WIDTH);
 	#ifndef debugInputs
-	std::cout<<"(fruitX-snakeX)/Width = "<<inputs->get(12,0)<<std::endl;
+	std::cout<<"(fruitX-snakeX)/Width = "<<inputs->get((snakeVisionY*2+1)*(snakeVisionX*2+1),0)<<std::endl;
 	#endif
 	inputs->set((snakeVisionY*2+1)*(snakeVisionX*2+1)+1,0,(fruitY-snake[0].y)*1.0/HEIGHT);
 	#ifndef debugInputs
-	std::cout<<"(fruitY-snakeY)/Height = "<<inputs->get(13,0)<<std::endl;
+	std::cout<<"(fruitY-snakeY)/Height = "<<inputs->get((snakeVisionY*2+1)*(snakeVisionX*2+1)+1,0)<<std::endl;
 	#endif
 	
 }
@@ -182,6 +184,9 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 	double dataToPrint[NUM_INPUTS*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
 	bool takenTurn = false;
 	for(int ga = 0; ga < numGames; ga++){
+		//if(ga!=0) (*of)<<std::endl;
+		//if(continueFile && ga==0) (*of)<<std::endl;
+		
 		if(ga%100==0)
 			std::cout<<"Games played: "<<ga<<std::endl;
 		bool takenTurn = false;
@@ -223,9 +228,17 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			#ifndef debugGameState
 			std::cout<<"between update and spawn fruit"<<std::endl;
 			#endif
+			#ifndef debugInputs
+				std::cout<<"Choices = ";
+				for(int choi = 0; choi < choice->getM();choi++){
+					std::cout<<choice->get(choi,0)<<",";
+				}
+				std::cout<<std::endl;
+			#endif
 			if(snakeLength>oldLength){
 				spawnFruit();
 			}
+
 			if(printGames)printBoard();
 			#ifndef debugGameState
 			std::cout<<"between print board and finding max turns"<<std::endl;
@@ -260,15 +273,14 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			if(snakeLength > oldLength || lost){
 				//std::cout<<"turn number before printing data to file: "<<turnNumber<<std::endl;
 				for(int i = 0; i < turnNumber; i++){
-					if(i == 0 && continueFile)
-						(*of)<<std::endl;
-					else if(i!=0)
-						(*of)<<std::endl;
 					for(int j = 0; j < (inputs->getM()+choice->getM()); j++){
 						//std::cout<<"data: "<<dataToPrint[i*(inputs->getM()+choice->getM())+j]<<", at: "<<i<<"*"<<inputs->getM()+choice->getM()<<"+"<<j<<", or  "<<i*(inputs->getM()+choice->getM())+j<<std::endl;
 						if(j>0) (*of)<<',';
 						(*of)<<dataToPrint[i*(inputs->getM()+choice->getM())+j];
 					}
+					//if(i<turnNumber-1){
+						(*of)<<std::endl;
+					//}
 				}
 				oldLength = snakeLength;
 				turnNumber = 0;
@@ -402,6 +414,6 @@ void updateGameState(){
 		reward=1;
 	}
 	else{
-		reward=0.1;
+		reward=0;
 	}
 }
