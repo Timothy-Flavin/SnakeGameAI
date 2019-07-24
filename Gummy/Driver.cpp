@@ -1,6 +1,7 @@
 #include "Gummy.h"
 #include<string>
 #define debugInputs
+#define debugGameState
 struct SnakePart {
 	public:
 		int x = 0;
@@ -56,11 +57,11 @@ int main(){
 		nets=gummy.manualInit("gameData.csv", "snakeNet.csv", 1, 4, layerSizes, true);
 	std::cin.get();
 	std::ofstream* of = new std::ofstream;
-	std::cout<<"updating training data"<<std::endl;
-	gummy.setCsvFileName("gameData.csv");
-	gummy.updateTrainingData(true);
-	std::cout<<"done Updating"<<std::endl;
-	std::cin.get();
+	//std::cout<<"updating training data"<<std::endl;
+	//gummy.setCsvFileName("gameData.csv");
+	//gummy.updateTrainingData(true);
+	//std::cout<<"done Updating"<<std::endl;
+	//std::cin.get();
 	Matrix* choice = new Matrix(4,1);
 	Matrix inputs = Matrix(layer0,1);
 
@@ -78,7 +79,12 @@ int main(){
 	std::cout<<"do you want to clear the gameDataFile?(y,n) ";
 	std::cin>>yesNo;
 	if(yesNo == 'y'){
+		continueFile=false;
 		of->open("gameData.csv");
+		for(int i = 0; i < layer0;i++){
+			(*of)<<"0,";
+		}
+		(*of)<<"0";
 		of->close();
 	} else{
 		continueFile = true;
@@ -177,7 +183,8 @@ void makeMove(Matrix* choice, Matrix* inputs, DenseNet* nets){
 void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std::ofstream* of, int playerType){
 	of->open ("gameData.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 	int numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
-	double dataToPrint[104*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
+	const int NUM_INPUTS = inputs->getM()+choice->getM();
+	double dataToPrint[NUM_INPUTS*(WIDTH*HEIGHT+WIDTH+HEIGHT)];
 	bool takenTurn = false;
 	for(int ga = 0; ga < numGames; ga++){
 		if(ga%100==0)
@@ -191,8 +198,13 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 		int oldLength = snakeLength;
 		numTurns = 100;//abs(snake[0].x-fruitX)+abs(snake[0].y-fruitY)+5+snakeLength;
 		while(!lost){
-			//setting data inputs and getting dir
+			#ifndef debugGameState
+			std::cout<<"setting data inputs and getting dir"<<std::endl;
+			#endif
 			setInputs(inputs);
+			#ifndef debugGameState
+			std::cout<<"Finished setting inputs"<<std::endl;
+			#endif
 			if(printGames || playerType == 0)
 				std::cin.get();
 			if(playerType == 0){
@@ -209,20 +221,29 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 			} else{
 				std::cout<<"invalid player type"<<std::endl;
 			}
-			
+			#ifndef debugGameState
+			std::cout<<"between picking move and update"<<std::endl;
+			#endif
 			update();
+			#ifndef debugGameState
+			std::cout<<"between update and spawn fruit"<<std::endl;
+			#endif
 			if(snakeLength>oldLength){
 				spawnFruit();
 			}
 			if(printGames)printBoard();
-
-
+			#ifndef debugGameState
+			std::cout<<"between print board and finding max turns"<<std::endl;
+			#endif
 			if(turnNumber==numTurns-1){
 				lost = true;
 				//std::cout<<"lost because of turns"<<std::endl;
 				reward=0;
 			}
 			//Setting Data To print each turn
+			#ifndef debugGameState
+			std::cout<<"Setting data to print"<<std::endl;
+			#endif
 			for(int i = 0; i < inputs->getM();i++){
 				dataToPrint[(inputs->getM()+choice->getM())*(turnNumber)+i]=inputs->get(i,0);
 			}
@@ -237,6 +258,9 @@ void playGames(DenseNet* nets, Matrix* choice, Matrix* inputs, int numGames, std
 				}
 			}
 			turnNumber++;
+			#ifndef debugGameState
+			std::cout<<"Printing to file"<<std::endl;
+			#endif
 			//print data
 			if(snakeLength > oldLength || lost){
 				//std::cout<<"turn number before printing data to file: "<<turnNumber<<std::endl;
@@ -319,9 +343,21 @@ void spawnFruit(){
 }
 
 void update(){
+	#ifndef debugGameState
+	std::cout<<"updating snake"<<std::endl;
+	#endif
 	updateSnake();
+	#ifndef debugGameState
+	std::cout<<"updating game state"<<std::endl;
+	#endif
 	updateGameState();
+	#ifndef debugGameState
+	std::cout<<"updating board"<<std::endl;
+	#endif
 	updateBoard();
+	#ifndef debugGameState
+	std::cout<<"done with update"<<std::endl;
+	#endif
 }
 
 void updateSnake(){
@@ -349,7 +385,8 @@ void updateSnake(){
 void updateBoard(){
 	clearBoard();
 	board[fruitY*WIDTH + fruitX] = '@';
-	board[snake[0].y*WIDTH + snake[0].x]='O';
+	if(snake[0].y<HEIGHT && snake[0].x<WIDTH)
+		board[snake[0].y*WIDTH + snake[0].x]='O';
 	for(int i = 1; i<snakeLength;i++){
 		board[snake[i].y * WIDTH + snake[i].x] = 'o';
 	}
@@ -370,6 +407,6 @@ void updateGameState(){
 		reward=1;
 	}
 	else{
-		reward=0;
+		reward=0.1;
 	}
 }
